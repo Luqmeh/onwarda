@@ -1,0 +1,64 @@
+:root {
+  --onwarda-cream: #f8f2ed;
+  --onwarda-white: #fffcfa;
+  --onwarda-olive: #77764f;
+  --onwarda-sage: #b2b184;
+  --onwarda-coral: #dd817a;
+  --onwarda-blush: #f5d8d3;
+  --onwarda-charcoal: #4b4a45;
+  --onwarda-muted: #858078;
+  --onwarda-radius: 0.9rem;
+  --onwarda-shadow: 0 1px 2px rgb(75 74 69 / 0.04), 0 10px 28px rgb(75 74 69 / 0.04);
+}
+
+.onwarda-client {
+  --client-primary: var(--onwarda-olive);
+  --client-secondary: var(--onwarda-sage);
+  --client-accent: var(--onwarda-coral);
+  --client-background: var(--onwarda-cream);
+  --background: var(--client-background);
+  --foreground: var(--onwarda-charcoal);
+  --card: var(--onwarda-white);
+  --card-foreground: var(--onwarda-charcoal);
+  --popover: var(--onwarda-white);
+  --popover-foreground: var(--onwarda-charcoal);
+  --primary: var(--client-primary);
+  --primary-foreground: var(--onwarda-white);
+  --secondary: var(--onwarda-blush);
+  --secondary-foreground: var(--onwarda-charcoal);
+  --muted: color-mix(in srgb, var(--client-background) 70%, var(--client-secondary) 30%);
+  --muted-foreground: var(--onwarda-muted);
+  --accent: var(--onwarda-blush);
+  --accent-foreground: var(--onwarda-charcoal);
+  --border: color-mix(in srgb, var(--client-primary) 16%, var(--client-background));
+  --input: color-mix(in srgb, var(--client-primary) 18%, var(--onwarda-white));
+  --ring: var(--client-primary);
+  --sidebar: var(--onwarda-white);
+  --sidebar-foreground: var(--onwarda-charcoal);
+  --sidebar-primary: var(--client-primary);
+  --sidebar-primary-foreground: var(--onwarda-white);
+  --sidebar-accent: color-mix(in srgb, var(--client-primary) 10%, var(--onwarda-white));
+  --sidebar-accent-foreground: var(--client-primary);
+  --sidebar-border: color-mix(in srgb, var(--client-primary) 14%, var(--client-background));
+  --sidebar-ring: var(--client-primary);
+  --radius: var(--onwarda-radius);
+  background: var(--client-background);
+  color: var(--onwarda-charcoal);
+  font-family: var(--font-onwarda), var(--font-sans), sans-serif;
+}
+
+.onwarda-display {
+  font-size: 1.85rem;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  color: var(--onwarda-charcoal);
+}
+
+.onwarda-kicker {
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--client-primary);
+}

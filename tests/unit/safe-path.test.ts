@@ -6,6 +6,7 @@ describe("post-login redirect sanitization", () => {
   it("allows admin and client workspace paths", () => {
     expect(safeInternalPath("/admin", "/app")).toBe("/admin");
     expect(safeInternalPath("/app", "/login")).toBe("/app");
+    expect(safeInternalPath("/signup?plan=starter", "/app")).toBe("/signup?plan=starter");
   });
 
   it("rejects protocol-relative and external URLs", () => {

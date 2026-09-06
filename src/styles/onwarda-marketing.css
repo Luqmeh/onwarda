@@ -1,0 +1,78 @@
+.onwarda-marketing {
+  --mk-cream: #f4ece4;
+  --mk-paper: #fffaf5;
+  --mk-ink: #2f2c27;
+  --mk-muted: #6f6a62;
+  --mk-olive: #5f5d3d;
+  --mk-sage: #9a9870;
+  --mk-coral: #c96b64;
+  --mk-line: color-mix(in srgb, var(--mk-olive) 16%, var(--mk-cream));
+  --background: var(--mk-cream);
+  --foreground: var(--mk-ink);
+  --primary: var(--mk-olive);
+  --primary-foreground: var(--mk-paper);
+  --ring: var(--mk-olive);
+  background: var(--mk-cream);
+  color: var(--mk-ink);
+  font-family: var(--font-onwarda), var(--font-sans), sans-serif;
+}
+
+.onwarda-marketing a {
+  color: inherit;
+}
+
+.mk-display {
+  font-size: clamp(2.4rem, 6vw, 4.6rem);
+  font-weight: 500;
+  letter-spacing: -0.045em;
+  line-height: 1.05;
+}
+
+.mk-kicker {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--mk-olive);
+}
+
+.mk-lede {
+  font-size: 1.125rem;
+  line-height: 1.65;
+  color: var(--mk-muted);
+}
+
+.mk-card {
+  border: 1px solid var(--mk-line);
+  background: var(--mk-paper);
+  border-radius: 1.25rem;
+}
+
+@layer components {
+  .mk-cta {
+    display: inline-flex;
+    min-height: 3rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 0 1.25rem;
+    font-size: 0.95rem;
+    font-weight: 550;
+  }
+}
+
+.mk-cta-primary {
+  background: var(--mk-olive);
+  color: var(--mk-paper);
+}
+
+.mk-cta-secondary {
+  border: 1px solid var(--mk-line);
+  background: transparent;
+  color: var(--mk-ink);
+}
+
+.mk-cta-coral {
+  background: var(--mk-coral);
+  color: var(--mk-paper);
+}

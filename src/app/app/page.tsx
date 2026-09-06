@@ -27,7 +27,12 @@ export const metadata = {
   title: "Overview",
 };
 
-export default async function ClientOverviewPage() {
+export default async function ClientOverviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ notice?: string }>;
+}) {
+  const query = await searchParams;
   const dashboard = await getWorkspaceDashboard();
 
   return (
@@ -37,6 +42,12 @@ export default async function ClientOverviewPage() {
         title={`Welcome to ${dashboard.organizationName}`}
         description="A calm view of the properties, stays, and guest needs in your care."
       />
+      {query.notice === "payment-setup" ? (
+        <p className="rounded-[var(--onwarda-radius)] border bg-onwarda-white px-4 py-3 text-sm" role="status">
+          Your organization is ready. The selected plan is pending. Payment setup is coming next — nothing has been
+          charged.
+        </p>
+      ) : null}
 
       <section aria-label="Workspace metrics" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <ClientMetricCard

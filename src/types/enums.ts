@@ -72,6 +72,7 @@ export type OrganizationPlan =
   (typeof ORGANIZATION_PLANS)[keyof typeof ORGANIZATION_PLANS];
 
 export const ORGANIZATION_SUBSCRIPTION_STATUSES = {
+  PENDING: "pending",
   TRIALING: "trialing",
   ACTIVE: "active",
   PAST_DUE: "past_due",
@@ -100,6 +101,19 @@ export const ONBOARDING_STATUSES = {
 export type OnboardingStatus =
   (typeof ONBOARDING_STATUSES)[keyof typeof ONBOARDING_STATUSES];
 
+export const PROPERTY_TYPES = {
+  APARTMENT: "apartment",
+  HOUSE: "house",
+  RIAD: "riad",
+  VILLA: "villa",
+  ROOM: "room",
+  HOTEL_ROOM: "hotel_room",
+  GUESTHOUSE: "guesthouse",
+  OTHER: "other",
+} as const;
+
+export type PropertyType = (typeof PROPERTY_TYPES)[keyof typeof PROPERTY_TYPES];
+
 export const PROPERTY_STATUSES = {
   DRAFT: "draft",
   ACTIVE: "active",
@@ -119,6 +133,17 @@ export const RESERVATION_STATUSES = {
 
 export type ReservationStatus =
   (typeof RESERVATION_STATUSES)[keyof typeof RESERVATION_STATUSES];
+
+export const RESERVATION_JOURNEY_STATUSES = {
+  NOT_STARTED: "not_started",
+  IN_PROGRESS: "in_progress",
+  COMPLETE: "complete",
+  NEEDS_ATTENTION: "needs_attention",
+  CHECKED_OUT: "checked_out",
+} as const;
+
+export type ReservationJourneyStatus =
+  (typeof RESERVATION_JOURNEY_STATUSES)[keyof typeof RESERVATION_JOURNEY_STATUSES];
 
 export const BOOKING_SOURCES = {
   AIRBNB: "airbnb",
@@ -167,6 +192,15 @@ export const PROPERTY_KNOWLEDGE_CATEGORIES = {
   ACCESS: "access",
   FAQ: "faq",
   TUTORIAL: "tutorial",
+  AC: "ac",
+  TV: "tv",
+  STOVE: "stove",
+  WASHER: "washer",
+  HOT_WATER: "hot_water",
+  COFFEE_MACHINE: "coffee_machine",
+  GARBAGE: "garbage",
+  POOL: "pool",
+  DOOR_ACCESS: "door_access",
   OTHER: "other",
 } as const;
 

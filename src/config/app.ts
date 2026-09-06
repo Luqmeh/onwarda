@@ -7,24 +7,42 @@ export const DEFAULT_LOCALE = "en" as const;
 export const RTL_LOCALES = ["ar"] as const;
 
 export const RESERVED_ORGANIZATION_SLUGS = [
+  "about",
   "admin",
   "app",
   "api",
   "auth",
+  "contact",
+  "demo",
+  "faq",
+  "features",
   "g",
   "guest",
+  "guest-experience",
   "login",
   "logout",
   "o",
   "onwarda",
+  "operations",
+  "p",
+  "portfolio",
+  "pricing",
+  "privacy",
+  "product",
+  "property-experience",
+  "services",
   "settings",
+  "signup",
+  "solutions",
   "status",
   "support",
+  "terms",
   "www",
 ] as const;
 
 export const CLIENT_ACCESS_PREFIX = "/o";
 export const GUEST_PORTAL_PREFIX = "/g";
+export const PUBLIC_PORTFOLIO_PREFIX = "/p";
 export const ADMIN_PREFIX = "/admin";
 export const CLIENT_WORKSPACE_PREFIX = "/app";
 
@@ -32,8 +50,17 @@ export function clientAccessPath(slug: string) {
   return `${CLIENT_ACCESS_PREFIX}/${slug}`;
 }
 
-export function guestPortalPath(token: string) {
-  return `${GUEST_PORTAL_PREFIX}/${token}`;
+export function publicOperatorPath(organizationSlug: string) {
+  return `${PUBLIC_PORTFOLIO_PREFIX}/${organizationSlug}`;
+}
+
+export function publicPropertyPath(organizationSlug: string, propertySlug: string) {
+  return `${PUBLIC_PORTFOLIO_PREFIX}/${organizationSlug}/${propertySlug}`;
+}
+
+export function guestPortalPath(token: string, suffix = "") {
+  const base = `${GUEST_PORTAL_PREFIX}/${token}`;
+  return suffix ? `${base}${suffix.startsWith("/") ? suffix : `/${suffix}`}` : base;
 }
 
 export function joinAppUrl(appUrl: string, path: string) {

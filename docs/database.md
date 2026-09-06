@@ -34,14 +34,22 @@ Point `.env.local` at the keys printed by `npx supabase status` when developing 
 | `20260903201000_qualify_membership_role.sql` | Qualify membership `role` columns in plpgsql RPCs |
 | `20260904010000_subscriptions_and_support_workspace.sql` | Subscription foundation and support-workspace read policies |
 | `20260904020000_organization_branding.sql` | `organization_branding`, default-row trigger, admin RPCs, private branding bucket |
+| `20260904030000_property_cms.sql` | Property CMS fields, amenities, house rules, content visibility, media, knowledge audience |
+| `20260905010000_public_and_guest.sql` | Public listing flags, reservation journey, guest rule acceptances, public/guest RPCs |
+| `20260905020000_guest_journey_ux.sql` | Guest journey mutations: rules are not accepted when none exist; arrival notes are token-scoped |
+| `20260905030000_commercial_funnel.sql` | Pending subscriptions, commercial onboarding RPC, marketing events, contact inquiries |
 
 ## Tables
 
 Identity: `profiles`, `platform_admins`, `organizations`, `organization_branding`, `organization_users`, `support_sessions`, `organization_subscriptions`
 
-Hospitality: `properties`, `guests`, `reservations`, `issues`, `property_knowledge`
+Onwarda company (not tenant-scoped): `commercial_inquiries`
 
-Guest portal: `guest_portal_tokens`
+Hospitality: `properties`, `property_languages`, `property_amenities`, `property_house_rules`, `property_content`, `property_media`, `guests`, `reservations`, `issues`, `property_knowledge`
+
+Catalogs (global, not tenant-owned): `amenity_definitions`, `house_rule_definitions`
+
+Guest portal: `guest_portal_tokens`, `guest_rule_acceptances`
 
 Activity: `events` (product, append-only), `audit_logs` (security/admin)
 
@@ -66,7 +74,13 @@ Private buckets:
 
 Key format: `organizations/{organization_id}/...`
 
-`organization_branding` stores `display_name`, `logo_path`, and `#RRGGBB` colors only. Image bytes are never stored in PostgreSQL. A trigger creates a default branding row when an organization is inserted. `logo_path` must match `organizations/{organization_id}/branding/logo.{png|jpg|jpeg|webp}`. Property-specific branding is not a table yet.
+`organization_branding` stores `display_name`, optional `public_description`, `logo_path`, and `#RRGGBB` colors. Image bytes are never stored in PostgreSQL. A trigger creates a default branding row when an organization is inserted. `logo_path` must match `organizations/{organization_id}/branding/logo.{png|jpg|jpeg|webp}`. Property-specific branding is not a table yet.
+
+`properties.is_listed_publicly` and `properties.booking_url` control the public portfolio/showcase. A home appears publicly only when it is `active` and listed. `reservations.journey_status` is the canonical guest journey (`not_started` | `in_progress` | `complete` | `needs_attention` | `checked_out`). Rule acceptance is stored on the reservation and snapshotted in `guest_rule_acceptances`.
+
+Property images live in the private `property-media` bucket at `organizations/{organization_id}/properties/{property_id}/media/{media_id}.{png|jpg|jpeg|webp}`. `property_media` stores that path or an https external URL (video / 360° / instructional). External URLs are validated; iframe HTML is not stored. Property type, amenities, house rules, languages, and content fields are structured. `properties.description` is the short public description. Internal identifiers stay on `properties.internal_identifier` and are omitted from public-safe loaders.
+
+`property_knowledge` is the instruction CMS. It now has `visibility` (`public` | `guest` | `private`) and `sort_order`. Published state still uses `draft` / `published` / `archived`. Guest-safe loaders only return published guest or public entries. Public-safe loaders only return published public entries.
 
 ## Tests
 

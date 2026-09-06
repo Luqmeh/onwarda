@@ -22,6 +22,9 @@ Onwarda is a modular monolith. One Next.js application and one PostgreSQL databa
 - `/app/*` — Client operator workspace. Organization-scoped.
 - `/o/[slug]` — Slug-based client access point. The organization UUID is the canonical identity.
 - `/g/[token]` — Guest portal. Opaque reservation tokens, no Onwarda user account.
+- `/p/[organizationSlug]` — Public operator portfolio. Active, listed properties only.
+- `/p/[organizationSlug]/[propertySlug]` — Public property showcase. Slugs only; no UUIDs.
+- `/`, `/product`, `/pricing`, `/signup`, and related marketing routes — Onwarda company website. Not tenant-scoped.
 
 The proxy layer (`src/proxy.ts`) performs session refresh and optimistic redirects. It is not the authorization boundary.
 
@@ -65,7 +68,7 @@ The Client Workspace reads branding through the user-scoped Supabase client and 
 
 Logos are stored in the private `organization-branding` bucket at `organizations/{organization_id}/branding/logo.{png|jpg|jpeg|webp}`. The database stores only that path. Uploaded files are treated as untrusted rasters and rendered with `<img>`, never as inline SVG or HTML.
 
-A future Guest Portal at `/g/{token}` should resolve `reservation → organization → organization_branding` after the opaque token is authorized. Do not make the branding bucket public; issue a token-bound signed URL later. Property-specific brand overrides are not modeled yet and should hang off `properties` when added, not replace organization branding.
+The Guest Portal at `/g/{token}` resolves `token → reservation → guest → property → organization → organization_branding` after the opaque token is authorized. Public pages resolve `organization slug → organization → public property slug`. Do not make branding or property-media buckets public; issue slug-authorized or token-authorized signed URLs. Property-specific brand overrides are not modeled yet and should hang off `properties` when added, not replace organization branding. `organization_branding.public_description` is optional public copy for the operator portfolio.
 
 ## Hosting and URLs
 
@@ -90,13 +93,25 @@ English, French, and Arabic catalogs live in `src/i18n/messages`. Arabic is RTL-
 
 The Client Workspace now has operational detail routes for properties, reservations, and guests:
 
-- `/app/properties/[propertyId]`
+- `/app/properties/[propertyId]` — Property CMS (canonical property content)
 - `/app/reservations/new`
 - `/app/reservations/[reservationId]`
 - `/app/guests/[guestId]`
 
-Organization context always comes from membership (or support-mode read access). Property create/edit is owner/admin. Reservation and guest writes are owner/admin/manager. Staff remain read-only except for issues.
+The **property is the canonical content object**. Name, type, location, amenities, house rules, arrival/access notes, instructions, and media are entered once in the Property CMS and reused by the Client Workspace, the public operator portfolio, the public property page, and the Guest Portal. Do not invent parallel content models.
+
+Organization context always comes from membership (or support-mode read access). Property create is owner/admin. Property CMS content (including media and knowledge) is owner/admin/manager. Reservation and guest writes are owner/admin/manager. Staff remain read-only except for issues.
+
+Content visibility is explicit: `public`, `guest`, or `private`. Server-side loaders `getPublicPropertyContent()` and `getGuestPropertyContent()` project a CMS snapshot. They never return internal identifiers, private notes, or guest-only access secrets on the public projection. Do not load everything and hide fields in React.
+
+## Public and guest surfaces
+
+Public pages call SECURITY DEFINER RPCs (`get_public_operator_portfolio`, `get_public_property_showcase`) granted to `anon`/`authenticated`, then project with `getPublicPropertyContent()`. Guest pages hash the URL token and call service-role-only RPCs (`inspect_guest_portal_token`, `get_guest_stay_bundle`, guest mutations), then project with `getGuestPropertyContent()`. Neither surface queries tenant tables as `anon`.
+
+The guest portal journey is a server-side projection (`getGuestJourney()`) over existing reservation timestamps and guest-visible CMS data. It does not add a second journey store. House rules are required only when guest-visible rules exist; visiting a page does not complete a step.
+
+A property is public only when `status = active` and `is_listed_publicly = true`. `properties.slug` is the public property identifier within an organization.
 
 ## What is not built yet
 
-Guest Portal UI, guest authentication, PMS/OTA integrations, Stripe, smart locks, AI guest agent, advanced CRM/analytics, property-specific branding overrides, custom domains, and white-label billing.
+PMS/OTA integrations, Stripe, smart-lock APIs, AI guest agent, advanced CRM/analytics, property-specific branding overrides, custom domains, ID document upload, and white-label billing. The public booking CTA is an optional https URL, not a payment engine.

@@ -9,6 +9,7 @@ import {
   createWorkspaceKnowledgeAction,
   type WorkspaceMutationState,
 } from "@/lib/workspace/actions";
+import { PROPERTY_KNOWLEDGE_CMS_CATEGORY_LABELS } from "@/lib/property-cms/catalog";
 import { PROPERTY_KNOWLEDGE_CATEGORIES } from "@/types/enums";
 
 const initialState: WorkspaceMutationState = {};
@@ -59,9 +60,22 @@ export function CreateKnowledgeForm({ properties }: KnowledgeFormProps) {
           >
             {Object.values(PROPERTY_KNOWLEDGE_CATEGORIES).map((category) => (
               <option key={category} value={category}>
-                {category.replaceAll("_", " ")}
+                {PROPERTY_KNOWLEDGE_CMS_CATEGORY_LABELS[category]}
               </option>
             ))}
+          </select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="visibility">Visibility</Label>
+          <select
+            id="visibility"
+            name="visibility"
+            defaultValue="guest"
+            className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm"
+          >
+            <option value="public">Public</option>
+            <option value="guest">Guest only</option>
+            <option value="private">Private</option>
           </select>
         </div>
       </div>

@@ -48,7 +48,7 @@ export function ClientSectionCard({
   return (
     <section
       className={cn(
-        "rounded-[var(--onwarda-radius)] border bg-onwarda-white p-5 shadow-onwarda sm:p-6",
+        "client-surface p-5 sm:p-6",
         className,
       )}
     >
@@ -74,7 +74,7 @@ type ClientEmptyStateProps = {
 
 export function ClientEmptyState({ title, description, action }: ClientEmptyStateProps) {
   return (
-    <div className="rounded-[calc(var(--onwarda-radius)-0.15rem)] bg-onwarda-cream/80 px-5 py-8 text-center">
+    <div className="rounded-[var(--onwarda-radius)] bg-[color-mix(in_srgb,var(--client-background)_80%,var(--client-secondary))] px-5 py-10 text-center">
       <p className="font-medium tracking-tight">{title}</p>
       <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-onwarda-muted">
         {description}
@@ -102,7 +102,7 @@ export function ClientMetricCard({ label, value, href }: ClientMetricCardProps) 
     return (
       <Link
         href={href}
-        className="rounded-[var(--onwarda-radius)] border bg-onwarda-white px-5 py-4 shadow-onwarda transition-colors hover:border-onwarda-olive/40"
+        className="client-surface client-lift px-5 py-4"
       >
         {content}
       </Link>
@@ -110,7 +110,7 @@ export function ClientMetricCard({ label, value, href }: ClientMetricCardProps) 
   }
 
   return (
-    <article className="rounded-[var(--onwarda-radius)] border bg-onwarda-white px-5 py-4 shadow-onwarda">
+    <article className="client-surface px-5 py-4">
       {content}
     </article>
   );
@@ -125,13 +125,14 @@ export function ClientStatusBadge({ label, tone = "neutral" }: ClientStatusBadge
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium capitalize",
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.7rem] font-medium tracking-wide capitalize",
         tone === "olive" && "bg-onwarda-olive/10 text-onwarda-olive",
         tone === "sage" && "bg-onwarda-sage/25 text-onwarda-charcoal",
         tone === "coral" && "bg-onwarda-coral/15 text-onwarda-charcoal",
         tone === "neutral" && "bg-onwarda-cream text-onwarda-muted",
       )}
     >
+      <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />
       {label}
     </span>
   );

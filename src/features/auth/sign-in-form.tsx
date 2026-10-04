@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -59,6 +60,12 @@ export function SignInForm({ nextPath, title, description }: SignInFormProps) {
       <Button type="submit" className="w-full" disabled={pending}>
         {pending ? "Signing in..." : "Sign in"}
       </Button>
+      <p className="text-center text-sm text-muted-foreground">
+        New to Onwarda?{" "}
+        <Link href="/signup" className="font-medium underline-offset-4 hover:underline">
+          Start with Onwarda
+        </Link>
+      </p>
     </form>
   );
 }

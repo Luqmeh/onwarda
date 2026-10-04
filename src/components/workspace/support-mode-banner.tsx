@@ -10,13 +10,13 @@ export function ClientSupportModeBanner({
 
   return (
     <div
-      className="border-b border-onwarda-olive/30 bg-onwarda-olive text-onwarda-white"
+      className="border-b border-onwarda-coral/40 bg-onwarda-blush text-onwarda-charcoal"
       role="status"
     >
       <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between lg:px-6">
         <div>
-          <p className="text-xs font-semibold tracking-[0.18em] uppercase">
-            Onwarda support mode
+          <p className="text-xs font-semibold tracking-[0.16em] text-onwarda-charcoal uppercase">
+            Onwarda support mode · read-only
           </p>
           <p className="mt-1 text-sm">
             Viewing {session.organizationName} for troubleshooting. This is not a

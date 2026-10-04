@@ -11,6 +11,8 @@ describe("organization slug validation", () => {
     expect(organizationSlugSchema.safeParse("admin").success).toBe(false);
     expect(organizationSlugSchema.safeParse("app").success).toBe(false);
     expect(organizationSlugSchema.safeParse("g").success).toBe(false);
+    expect(organizationSlugSchema.safeParse("pricing").success).toBe(false);
+    expect(organizationSlugSchema.safeParse("signup").success).toBe(false);
   });
 
   it("rejects uppercase and unsafe characters", () => {

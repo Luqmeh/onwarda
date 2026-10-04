@@ -78,11 +78,24 @@ export async function seedRlsFixture(client: Client): Promise<RlsFixture> {
   await client.query(`
     delete from public.audit_logs;
     delete from public.events;
+    delete from public.commercial_inquiries;
     delete from public.support_sessions;
+    delete from public.cleaning_task_items;
+    delete from public.cleaning_tasks;
+    delete from public.property_cleaning_agents;
+    delete from public.cleaning_agent_links;
+    delete from public.cleaning_agents;
+    delete from public.organization_subscription_events;
     delete from public.organization_subscriptions;
+    delete from public.guest_rule_acceptances;
     delete from public.guest_portal_tokens;
     delete from public.issues;
     delete from public.property_knowledge;
+    delete from public.property_media where true;
+    delete from public.property_content where true;
+    delete from public.property_house_rules where true;
+    delete from public.property_amenities where true;
+    delete from public.property_languages where true;
     delete from public.reservations;
     delete from public.guests;
     delete from public.properties;
@@ -151,10 +164,11 @@ export async function seedRlsFixture(client: Client): Promise<RlsFixture> {
   await client.query(
     `
       insert into public.properties (
-        id, organization_id, name, slug, status
+        id, organization_id, name, slug, status, city, country,
+        capacity, bedrooms, bathrooms, is_listed_publicly, booking_url
       ) values
-        ($1, $3, 'Riad Suite', 'riad-suite', 'active'),
-        ($2, $4, 'Villa One', 'villa-one', 'active')
+        ($1, $3, 'Riad Suite', 'riad-suite', 'active', 'Marrakech', 'Morocco', 4, 2, 2, true, 'https://example.com/book-atlas'),
+        ($2, $4, 'Villa One', 'villa-one', 'active', 'Lisbon', 'Portugal', 6, 3, 3, true, 'https://example.com/book-villa')
     `,
     [propertyA, propertyB, orgA, orgB],
   );

@@ -8,9 +8,12 @@ import {
   ClientStatusBadge,
 } from "@/components/workspace/client-ui";
 import { CLIENT_ROUTES, canManageWorkspace, clientPropertyPath } from "@/config/client";
+import { PROPERTY_READINESS_LABELS, type PropertyReadiness } from "@/lib/cleaning/catalog";
+import { PROPERTY_TYPE_LABELS } from "@/lib/property-cms/catalog";
 import { requireWorkspaceView } from "@/lib/tenancy/workspace-access";
 import { listWorkspaceProperties } from "@/lib/workspace/data";
 import { propertyLocation, statusTone } from "@/lib/workspace/format";
+import type { PropertyType } from "@/types/enums";
 
 export const metadata = {
   title: "Properties",
@@ -39,11 +42,11 @@ export default async function ClientPropertiesPage() {
         }
       />
 
-      <ClientSectionCard title="Directory">
-        {properties.length === 0 ? (
+      {properties.length === 0 ? (
+        <ClientSectionCard title="Portfolio">
           <ClientEmptyState
-            title="Your properties will appear here."
-            description="Add the first home to begin shaping guest journeys from arrival to farewell."
+            title="Your property portfolio starts here."
+            description="Add the first home and build the stay your guests will actually use."
             action={
               canAdd ? (
                 <Button asChild>
@@ -52,42 +55,44 @@ export default async function ClientPropertiesPage() {
               ) : null
             }
           />
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b text-onwarda-muted">
-                <tr>
-                  <th className="py-2 font-medium">Property</th>
-                  <th className="py-2 font-medium">Location</th>
-                  <th className="py-2 font-medium">Status</th>
-                  <th className="py-2 font-medium">Reservations</th>
-                </tr>
-              </thead>
-              <tbody>
-                {properties.map((property) => (
-                  <tr key={property.id} className="border-b last:border-0">
-                    <td className="py-3 font-medium">
-                      <Link
-                        href={clientPropertyPath(property.id)}
-                        className="hover:text-onwarda-olive hover:underline"
-                      >
-                        {property.name}
-                      </Link>
-                    </td>
-                    <td className="py-3 text-onwarda-muted">
-                      {propertyLocation(property) ?? "—"}
-                    </td>
-                    <td className="py-3">
-                      <ClientStatusBadge label={property.status} tone={statusTone(property.status)} />
-                    </td>
-                    <td className="py-3">{property.reservationCount}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </ClientSectionCard>
+        </ClientSectionCard>
+      ) : (
+        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {properties.map((property) => (
+            <li key={property.id}>
+              <Link href={clientPropertyPath(property.id)} className="client-surface client-lift block overflow-hidden">
+                <div className="flex h-28 items-end bg-[color-mix(in_srgb,var(--client-primary)_16%,var(--client-background))] p-4">
+                  <span className="text-2xl font-medium tracking-tight text-onwarda-charcoal/80">
+                    {property.name.slice(0, 1)}
+                  </span>
+                </div>
+                <div className="space-y-3 p-4">
+                  <div>
+                    <p className="font-medium">{property.name}</p>
+                    <p className="text-sm text-onwarda-muted">{propertyLocation(property) ?? "Location not set"}</p>
+                  </div>
+                  <p className="text-sm text-onwarda-muted">
+                    {property.propertyType
+                      ? PROPERTY_TYPE_LABELS[property.propertyType as PropertyType]
+                      : "Home"}{" "}
+                    · {property.reservationCount} stays
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <ClientStatusBadge label={property.status} tone={statusTone(property.status)} />
+                    <ClientStatusBadge
+                      label={
+                        PROPERTY_READINESS_LABELS[(property.readiness ?? "ready") as PropertyReadiness] ??
+                        "Ready"
+                      }
+                      tone={property.readiness === "ready" ? "olive" : "coral"}
+                    />
+                  </div>
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

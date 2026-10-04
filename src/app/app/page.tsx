@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import Link from "next/link";
 
+import { CalendarSection } from "@/components/workspace/calendar-section";
 import {
   ClientEmptyState,
   ClientMetricCard,
@@ -7,12 +9,14 @@ import {
   ClientSectionCard,
   ClientStatusBadge,
 } from "@/components/workspace/client-ui";
+import { OperationsCalendarSkeleton } from "@/components/workspace/operations-calendar";
 import {
   CLIENT_ROUTES,
   clientGuestPath,
   clientPropertyPath,
   clientReservationPath,
 } from "@/config/client";
+import { resolveCalendarAnchor, resolveCalendarView, todayDateKey } from "@/lib/calendar/model";
 import { getWorkspaceDashboard } from "@/lib/workspace/data";
 import {
   formatDate,
@@ -27,39 +31,97 @@ export const metadata = {
   title: "Overview",
 };
 
-export default async function ClientOverviewPage() {
+export default async function ClientOverviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ notice?: string; view?: string; date?: string }>;
+}) {
+  const query = await searchParams;
   const dashboard = await getWorkspaceDashboard();
+  const today = todayDateKey();
+  const calendarView = resolveCalendarView(query.view);
+  const calendarAnchor = resolveCalendarAnchor(query.date, today);
+  const arrivingToday = dashboard.upcomingReservations.filter((reservation) =>
+    reservation.checkIn.startsWith(today),
+  );
+  const nextArrival = arrivingToday[0] ?? dashboard.upcomingReservations[0] ?? null;
+  const attention = dashboard.openIssues.length + arrivingToday.length;
+  const greetingHour = new Date().getHours();
+  const greeting =
+    greetingHour < 12 ? "Good morning" : greetingHour < 18 ? "Good afternoon" : "Good evening";
 
   return (
     <div className="space-y-8">
       <ClientPageHeader
-        kicker="Workspace"
-        title={`Welcome to ${dashboard.organizationName}`}
-        description="A calm view of the properties, stays, and guest needs in your care."
+        kicker={dashboard.organizationName}
+        title={greeting}
+        description="Here's what's happening with your operation today."
       />
+      {query.notice === "payment-setup" ? (
+        <p className="rounded-[var(--onwarda-radius)] border bg-onwarda-white px-4 py-3 text-sm" role="status">
+          Your organization is ready. The selected plan is pending. Payment setup is coming next — nothing has been
+          charged.
+        </p>
+      ) : null}
 
-      <section aria-label="Workspace metrics" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <ClientMetricCard
-          label="Properties"
-          value={dashboard.counts.properties}
-          href={CLIENT_ROUTES.properties}
+      <Suspense key={`${calendarView}-${calendarAnchor}`} fallback={<OperationsCalendarSkeleton />}>
+        <CalendarSection
+          view={calendarView}
+          anchor={calendarAnchor}
+          basePath={CLIENT_ROUTES.root}
+          title="Today at a glance"
+          expandHref={CLIENT_ROUTES.calendar}
         />
-        <ClientMetricCard
-          label="Upcoming stays"
-          value={dashboard.counts.upcomingReservations}
-          href={CLIENT_ROUTES.reservations}
-        />
-        <ClientMetricCard
-          label="Guests"
-          value={dashboard.counts.guests}
-          href={CLIENT_ROUTES.guests}
-        />
-        <ClientMetricCard
-          label="Open issues"
-          value={dashboard.counts.openIssues}
-          href={CLIENT_ROUTES.issues}
-        />
+      </Suspense>
+
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <ClientMetricCard label="Arrivals today" value={arrivingToday.length} href={CLIENT_ROUTES.reservations} />
+        <ClientMetricCard label="Upcoming stays" value={dashboard.counts.upcomingReservations} href={CLIENT_ROUTES.reservations} />
+        <ClientMetricCard label="Open issues" value={dashboard.counts.openIssues} href={CLIENT_ROUTES.issues} />
+        <ClientMetricCard label="Guests" value={dashboard.counts.guests} href={CLIENT_ROUTES.guests} />
       </section>
+
+      <ClientSectionCard title={attention === 0 ? "You're all caught up" : "Needs attention"}>
+        {attention === 0 ? (
+          <p className="text-sm text-onwarda-muted">
+            No active tasks need your attention.
+            {nextArrival ? (
+              <>
+                {" Next up: "}
+                <Link
+                  href={clientReservationPath(nextArrival.id)}
+                  className="font-medium underline underline-offset-4"
+                >
+                  {guestDisplayName(nextArrival.guestName)}
+                </Link>
+                {` at ${nextArrival.propertyName ?? "a property"} · ${formatStay(
+                  nextArrival.checkIn,
+                  nextArrival.checkOut,
+                )}.`}
+              </>
+            ) : null}
+          </p>
+        ) : (
+          <ul className="space-y-2 text-sm">
+            {arrivingToday.map((reservation) => (
+              <li key={reservation.id}>
+                <Link href={clientReservationPath(reservation.id)} className="font-medium underline underline-offset-4">
+                  {guestDisplayName(reservation.guestName)} arrives today
+                </Link>
+                <span className="text-onwarda-muted"> · {reservation.propertyName ?? "Property"}</span>
+              </li>
+            ))}
+            {dashboard.openIssues.slice(0, 3).map((issue) => (
+              <li key={issue.id}>
+                <Link href={CLIENT_ROUTES.issues} className="font-medium capitalize underline underline-offset-4">
+                  {humanizeToken(issue.category)}
+                </Link>
+                <span className="text-onwarda-muted"> · {issue.propertyName ?? "Workspace"}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </ClientSectionCard>
 
       <div className="grid gap-6 xl:grid-cols-2">
         <ClientSectionCard

@@ -9,10 +9,12 @@ import { CLIENT_LOGIN, CLIENT_ROUTES } from "@/config/client";
 import { SignInForm } from "@/features/auth/sign-in-form";
 import { getCurrentUser } from "@/lib/auth/session";
 import { safeInternalPath } from "@/lib/auth/safe-path";
+import { recordMarketingEvent } from "@/lib/marketing/events";
 import { getCurrentOrganization } from "@/lib/tenancy/context";
 
 export const metadata = {
-  title: "Client sign in",
+  title: "Log in",
+  description: "Sign in to your Onwarda workspace.",
 };
 
 export default async function ClientLoginPage({
@@ -24,7 +26,19 @@ export default async function ClientLoginPage({
   const nextPath = safeInternalPath(params.next, CLIENT_ROUTES.root);
   const user = await getCurrentUser();
 
+  if (!user) {
+    await recordMarketingEvent({ type: "login_started", path: "/login" });
+  }
+
   if (user) {
+    if (
+      nextPath.startsWith("/signup") ||
+      nextPath.startsWith("/pricing") ||
+      nextPath.startsWith("/contact")
+    ) {
+      redirect(nextPath);
+    }
+
     const membership = await getCurrentOrganization().catch(() => null);
 
     if (membership && (nextPath.startsWith("/app") || nextPath.startsWith("/o/"))) {

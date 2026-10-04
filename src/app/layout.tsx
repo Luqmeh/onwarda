@@ -24,11 +24,12 @@ const notoArabic = Noto_Sans_Arabic({
 
 export const metadata: Metadata = {
   title: {
-    default: APP_NAME,
+    default: `${APP_NAME} · The operating layer for hospitality`,
     template: `%s · ${APP_NAME}`,
   },
   description:
-    "Onwarda is a multi-tenant hospitality operations platform with isolated admin, client, and guest contexts.",
+    "Onwarda is the operating layer for hospitality. Attract guests, guide every stay, and operate from one digital layer.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

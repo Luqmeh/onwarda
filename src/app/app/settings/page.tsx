@@ -1,10 +1,12 @@
+import Link from "next/link";
+
 import {
   ClientPageHeader,
   ClientSectionCard,
   ClientStatusBadge,
 } from "@/components/workspace/client-ui";
 import { WorkspaceBrandingForm } from "@/components/workspace/workspace-branding-form";
-import { canManageWorkspace } from "@/config/client";
+import { CLIENT_ROUTES, canManageWorkspace } from "@/config/client";
 import { loadWorkspaceBranding } from "@/lib/branding/load";
 import { requireWorkspaceView } from "@/lib/tenancy/workspace-access";
 import { listWorkspaceMembers } from "@/lib/workspace/data";
@@ -49,7 +51,7 @@ export default async function ClientSettingsPage({
       <ClientPageHeader
         kicker="Workspace"
         title="Settings"
-        description="Organization profile for this client. Subscription and billing administration stay in Internal Admin."
+        description="Organization profile for this client. Subscription status lives in Billing."
       />
       {notice ? (
         <p className="rounded-lg border bg-onwarda-white px-3 py-2 text-sm" role="status">
@@ -108,6 +110,14 @@ export default async function ClientSettingsPage({
           </dl>
         </ClientSectionCard>
       )}
+      <ClientSectionCard
+        title="Billing"
+        description="Subscription status is organization-scoped and lives on the billing page."
+      >
+        <Link href={CLIENT_ROUTES.billing} className="text-sm font-medium underline underline-offset-4">
+          Open billing
+        </Link>
+      </ClientSectionCard>
       <ClientSectionCard
         title="Members"
         description="People who belong to this organization. Roles cannot be changed from this page."

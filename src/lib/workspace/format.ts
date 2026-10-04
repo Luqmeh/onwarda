@@ -21,6 +21,16 @@ export function formatStay(checkIn: string, checkOut: string) {
   return `${formatDate(checkIn)} – ${formatDate(checkOut)}`;
 }
 
+export function formatDateTime(value: string) {
+  return new Date(value).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 export function propertyLocation(property: {
   city?: string | null;
   country?: string | null;

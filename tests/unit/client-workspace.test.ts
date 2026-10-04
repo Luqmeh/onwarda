@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import {
   CLIENT_ROUTES,
+  canManagePropertyCms,
   canManageStays,
+  canManageBilling,
   canManageWorkspace,
+  canViewBilling,
   clientGuestPath,
   clientNavItemsForRole,
   clientPropertyPath,
@@ -19,6 +22,7 @@ describe("client workspace navigation", () => {
     expect(CLIENT_ROUTES.properties).toBe("/app/properties");
     expect(CLIENT_ROUTES.reservationNew).toBe("/app/reservations/new");
     expect(CLIENT_ROUTES.settings).toBe("/app/settings");
+    expect(CLIENT_ROUTES.billing).toBe("/app/billing");
     expect(clientPropertyPath("11111111-1111-4111-8111-111111111111")).toBe(
       "/app/properties/11111111-1111-4111-8111-111111111111",
     );
@@ -37,14 +41,26 @@ describe("client workspace navigation", () => {
 
     expect(staff).toContain("Overview");
     expect(staff).toContain("Issues");
+    expect(staff).toContain("Cleaning");
     expect(staff).not.toContain("Settings");
+    expect(staff).not.toContain("Billing");
     expect(owner).toContain("Settings");
+    expect(owner).toContain("Billing");
+    expect(clientNavItemsForRole("manager").map((item) => item.label)).toContain("Billing");
+    expect(canViewBilling("manager")).toBe(true);
+    expect(canViewBilling("staff")).toBe(false);
+    expect(canManageBilling("staff")).toBe(false);
+    expect(canManageBilling("manager")).toBe(false);
+    expect(canManageBilling("owner")).toBe(true);
     expect(canManageWorkspace("staff")).toBe(false);
     expect(canManageWorkspace("owner")).toBe(true);
     expect(canManageWorkspace("admin")).toBe(true);
     expect(canManageStays("staff")).toBe(false);
     expect(canManageStays("manager")).toBe(true);
     expect(canManageStays("owner")).toBe(true);
+    expect(canManagePropertyCms("staff")).toBe(false);
+    expect(canManagePropertyCms("manager")).toBe(true);
+    expect(canManagePropertyCms("owner")).toBe(true);
   });
 
   it("highlights nested property routes without selecting overview", () => {
@@ -75,6 +91,7 @@ describe("organization branding defaults", () => {
       organizationName: "Riad Atlas",
       branding: {
         display_name: "Riad Atlas",
+        public_description: null,
         logo_path: null,
         primary_color: "#77764F",
         secondary_color: null,

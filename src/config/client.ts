@@ -8,14 +8,18 @@ import type { OrganizationUserRole } from "@/types/enums";
 
 export const CLIENT_ROUTES = {
   root: CLIENT_WORKSPACE_PREFIX,
+  calendar: `${CLIENT_WORKSPACE_PREFIX}/calendar`,
   properties: `${CLIENT_WORKSPACE_PREFIX}/properties`,
   propertyNew: `${CLIENT_WORKSPACE_PREFIX}/properties/new`,
   reservations: `${CLIENT_WORKSPACE_PREFIX}/reservations`,
   reservationNew: `${CLIENT_WORKSPACE_PREFIX}/reservations/new`,
   guests: `${CLIENT_WORKSPACE_PREFIX}/guests`,
   issues: `${CLIENT_WORKSPACE_PREFIX}/issues`,
+  cleaning: `${CLIENT_WORKSPACE_PREFIX}/cleaning`,
+  cleaningAgents: `${CLIENT_WORKSPACE_PREFIX}/cleaning/agents`,
   knowledge: `${CLIENT_WORKSPACE_PREFIX}/knowledge`,
   settings: `${CLIENT_WORKSPACE_PREFIX}/settings`,
+  billing: `${CLIENT_WORKSPACE_PREFIX}/billing`,
   account: `${CLIENT_WORKSPACE_PREFIX}/account`,
 } as const;
 
@@ -31,6 +35,12 @@ const ALL_ROLES: OrganizationUserRole[] = [
 export const CLIENT_NAV_ITEMS = [
   { href: CLIENT_ROUTES.root, label: "Overview", exact: true, roles: ALL_ROLES },
   {
+    href: CLIENT_ROUTES.calendar,
+    label: "Calendar",
+    exact: false,
+    roles: ALL_ROLES,
+  },
+  {
     href: CLIENT_ROUTES.properties,
     label: "Properties",
     exact: false,
@@ -45,10 +55,22 @@ export const CLIENT_NAV_ITEMS = [
   { href: CLIENT_ROUTES.guests, label: "Guests", exact: false, roles: ALL_ROLES },
   { href: CLIENT_ROUTES.issues, label: "Issues", exact: false, roles: ALL_ROLES },
   {
+    href: CLIENT_ROUTES.cleaning,
+    label: "Cleaning",
+    exact: false,
+    roles: ALL_ROLES,
+  },
+  {
     href: CLIENT_ROUTES.knowledge,
     label: "Knowledge",
     exact: false,
     roles: ALL_ROLES,
+  },
+  {
+    href: CLIENT_ROUTES.billing,
+    label: "Billing",
+    exact: false,
+    roles: ORGANIZATION_OPERATIONAL_ROLES,
   },
   {
     href: CLIENT_ROUTES.settings,
@@ -84,6 +106,26 @@ export function canManageStays(role: OrganizationUserRole) {
   return ORGANIZATION_OPERATIONAL_ROLES.includes(role);
 }
 
+export function canManagePropertyCms(role: OrganizationUserRole) {
+  return ORGANIZATION_OPERATIONAL_ROLES.includes(role);
+}
+
+export function canViewBilling(role: OrganizationUserRole) {
+  return ORGANIZATION_OPERATIONAL_ROLES.includes(role);
+}
+
+export function canManageBilling(role: OrganizationUserRole) {
+  return ORGANIZATION_ADMIN_ROLES.includes(role);
+}
+
+export function canManageCleaning(role: OrganizationUserRole) {
+  return ORGANIZATION_OPERATIONAL_ROLES.includes(role);
+}
+
+export function canAdministerCleaning(role: OrganizationUserRole) {
+  return ORGANIZATION_ADMIN_ROLES.includes(role);
+}
+
 export function clientPropertyPath(propertyId: string) {
   return `${CLIENT_ROUTES.properties}/${propertyId}`;
 }
@@ -102,4 +144,12 @@ export function clientReservationCreatePath(propertyId?: string) {
   }
 
   return `${CLIENT_ROUTES.reservationNew}?property=${propertyId}`;
+}
+
+export function cleaningTaskPath(taskId: string) {
+  return `${CLIENT_ROUTES.cleaning}/${taskId}`;
+}
+
+export function cleaningAgentPath(agentId: string) {
+  return `${CLIENT_ROUTES.cleaningAgents}/${agentId}`;
 }

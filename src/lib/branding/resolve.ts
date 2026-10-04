@@ -7,6 +7,7 @@ import type { OrganizationBrandingRecord } from "@/types/database";
 export type ResolvedOrganizationBranding = {
   organizationId: string;
   displayName: string;
+  publicDescription: string | null;
   logoPath: string | null;
   logoUrl: string | null;
   primaryColor: string;
@@ -24,7 +25,12 @@ export function resolveOrganizationBranding(input: {
   organizationName: string;
   branding?: Pick<
     OrganizationBrandingRecord,
-    "display_name" | "logo_path" | "primary_color" | "secondary_color" | "accent_color"
+    | "display_name"
+    | "public_description"
+    | "logo_path"
+    | "primary_color"
+    | "secondary_color"
+    | "accent_color"
   > | null;
   logoUrl?: string | null;
 }): ResolvedOrganizationBranding {
@@ -39,6 +45,7 @@ export function resolveOrganizationBranding(input: {
   return {
     organizationId: input.organizationId,
     displayName,
+    publicDescription: input.branding?.public_description?.trim() || null,
     logoPath: input.branding?.logo_path ?? null,
     logoUrl: input.logoUrl ?? null,
     primaryColor: storedPrimaryColor ?? DEFAULT_BRAND_COLORS.primary,

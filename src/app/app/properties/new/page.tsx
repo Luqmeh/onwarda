@@ -34,7 +34,7 @@ export default async function ClientAddPropertyPage() {
       <ClientPageHeader
         kicker="Homes"
         title="Add property"
-        description="Create a home for this organization. The organization is taken from your membership, never from the browser."
+        description="Create a home for this organization. You can complete the Property CMS after saving. The organization is taken from your membership, never from the browser."
         actions={
           <Button asChild variant="outline">
             <Link href={CLIENT_ROUTES.properties}>Back to properties</Link>

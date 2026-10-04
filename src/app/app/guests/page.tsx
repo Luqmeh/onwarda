@@ -24,54 +24,47 @@ export default async function ClientGuestsPage() {
         description="A simple directory of guests who have stayed, or will stay, with this organization."
       />
 
-      <ClientSectionCard title="Directory">
-        {guests.length === 0 ? (
+      {guests.length === 0 ? (
+        <ClientSectionCard title="Guests">
           <ClientEmptyState
             title="Guests will appear here."
-            description="Names are kept with this organization only. Phone numbers and other sensitive details stay out of this overview."
+            description="Names stay with this organization. The directory fills in as stays are added."
           />
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b text-onwarda-muted">
-                <tr>
-                  <th className="py-2 font-medium">Name</th>
-                  <th className="py-2 font-medium">Email</th>
-                  <th className="py-2 font-medium">Reservations</th>
-                  <th className="py-2 font-medium">Latest stay</th>
-                </tr>
-              </thead>
-              <tbody>
-                {guests.map((guest) => (
-                  <tr key={guest.id} className="border-b last:border-0">
-                    <td className="py-3 font-medium">
-                      <Link
-                        href={clientGuestPath(guest.id)}
-                        className="hover:text-onwarda-olive hover:underline"
-                      >
-                        {guestDisplayName({
-                          first_name: guest.firstName,
-                          last_name: guest.lastName,
-                        })}
-                      </Link>
-                    </td>
-                    <td className="py-3 text-onwarda-muted">{guest.email ?? "—"}</td>
-                    <td className="py-3">{guest.stayCount}</td>
-                    <td className="py-3 text-onwarda-muted">
+        </ClientSectionCard>
+      ) : (
+        <ul className="grid gap-3">
+          {guests.map((guest) => {
+            const name = guestDisplayName({
+              first_name: guest.firstName,
+              last_name: guest.lastName,
+            });
+            return (
+              <li key={guest.id}>
+                <Link
+                  href={clientGuestPath(guest.id)}
+                  className="client-surface client-lift flex items-center gap-4 p-4"
+                >
+                  <span className="flex size-11 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--client-primary)_12%,var(--client-background))] text-sm font-medium">
+                    {name.slice(0, 1)}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-medium">{name}</span>
+                    <span className="block truncate text-sm text-onwarda-muted">{guest.email ?? "No email on file"}</span>
+                  </span>
+                  <span className="text-right text-sm text-onwarda-muted">
+                    {guest.stayCount} stays
+                    <span className="mt-1 block">
                       {guest.latestReservation
-                        ? formatStay(
-                            guest.latestReservation.checkIn,
-                            guest.latestReservation.checkOut,
-                          )
-                        : "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </ClientSectionCard>
+                        ? formatStay(guest.latestReservation.checkIn, guest.latestReservation.checkOut)
+                        : "No stay yet"}
+                    </span>
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }

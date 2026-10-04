@@ -2,7 +2,10 @@
 
 import { redirect } from "next/navigation";
 
+import { guestPortalUrl } from "@/config/app";
+import { getPublicEnv } from "@/config/env";
 import { CLIENT_ROUTES, clientPropertyPath, clientReservationPath } from "@/config/client";
+import { generateGuestPortalToken } from "@/lib/guest-portal/tokens";
 import {
   ORGANIZATION_ADMIN_ROLES,
   ORGANIZATION_ISSUE_WRITE_ROLES,
@@ -31,6 +34,11 @@ import {
 
 export type WorkspaceMutationState = {
   error?: string;
+};
+
+export type GuestPortalLinkState = {
+  error?: string;
+  portalUrl?: string;
 };
 
 function publicMutationError(error: unknown) {
@@ -83,13 +91,15 @@ export async function createWorkspacePropertyAction(
     const context = await requireOrganizationRole(ORGANIZATION_ADMIN_ROLES);
     const parsed = createWorkspacePropertySchema.safeParse({
       name: formData.get("name"),
-      city: String(formData.get("city") ?? "").trim() || undefined,
-      country: String(formData.get("country") ?? "").trim() || undefined,
+      internalIdentifier: formData.get("internalIdentifier"),
+      propertyType: formData.get("propertyType"),
+      city: formData.get("city"),
+      country: formData.get("country"),
       status: formData.get("status") || "draft",
     });
 
     if (!parsed.success) {
-      return { error: "Enter a property name, location, and status." };
+      return { error: "Enter a property name and a valid status." };
     }
 
     const supabase = await createSupabaseServerClient();
@@ -101,6 +111,8 @@ export async function createWorkspacePropertyAction(
         organization_id: organizationId,
         name: parsed.data.name,
         slug,
+        internal_identifier: parsed.data.internalIdentifier ?? null,
+        property_type: parsed.data.propertyType ?? null,
         city: parsed.data.city ?? null,
         country: parsed.data.country ?? null,
         status: parsed.data.status,
@@ -138,17 +150,29 @@ export async function updateWorkspacePropertyAction(
   formData: FormData,
 ): Promise<WorkspaceMutationState> {
   try {
-    const context = await requireOrganizationRole(ORGANIZATION_ADMIN_ROLES);
+    const context = await requireOrganizationRole(ORGANIZATION_OPERATIONAL_ROLES);
     const parsedId = uuidSchema.safeParse(propertyId);
     const parsed = updateWorkspacePropertySchema.safeParse({
       name: formData.get("name"),
-      city: String(formData.get("city") ?? "").trim() || undefined,
-      country: String(formData.get("country") ?? "").trim() || undefined,
+      internalIdentifier: formData.get("internalIdentifier"),
+      propertyType: formData.get("propertyType"),
+      address: formData.get("address"),
+      city: formData.get("city"),
+      country: formData.get("country"),
+      capacity: formData.get("capacity"),
+      bedrooms: formData.get("bedrooms"),
+      bathrooms: formData.get("bathrooms"),
+      checkInTime: formData.get("checkInTime"),
+      checkOutTime: formData.get("checkOutTime"),
+      description: formData.get("description"),
+      languages: formData.getAll("languages"),
       status: formData.get("status") || "draft",
+      isListedPublicly: formData.get("isListedPublicly"),
+      bookingUrl: formData.get("bookingUrl"),
     });
 
     if (!parsedId.success || !parsed.success) {
-      return { error: "Enter a property name, location, and status." };
+      return { error: "Enter valid basic property information." };
     }
 
     const supabase = await createSupabaseServerClient();
@@ -167,15 +191,50 @@ export async function updateWorkspacePropertyAction(
       .from("properties")
       .update({
         name: parsed.data.name,
+        internal_identifier: parsed.data.internalIdentifier ?? null,
+        property_type: parsed.data.propertyType ?? null,
+        address: parsed.data.address ?? null,
         city: parsed.data.city ?? null,
         country: parsed.data.country ?? null,
+        capacity: parsed.data.capacity ?? null,
+        bedrooms: parsed.data.bedrooms ?? null,
+        bathrooms: parsed.data.bathrooms ?? null,
+        check_in_time: parsed.data.checkInTime ?? null,
+        check_out_time: parsed.data.checkOutTime ?? null,
+        description: parsed.data.description ?? null,
         status: parsed.data.status,
+        is_listed_publicly: parsed.data.isListedPublicly,
+        booking_url: parsed.data.bookingUrl ?? null,
       })
       .eq("id", property.id)
       .eq("organization_id", context.organization.id);
 
     if (error) {
       return { error: "Unable to update this property." };
+    }
+
+    const { error: languageDeleteError } = await supabase
+      .from("property_languages")
+      .delete()
+      .eq("property_id", property.id)
+      .eq("organization_id", context.organization.id);
+
+    if (languageDeleteError) {
+      return { error: "Unable to update supported languages." };
+    }
+
+    if (parsed.data.languages.length > 0) {
+      const { error: languageInsertError } = await supabase.from("property_languages").insert(
+        parsed.data.languages.map((language_code) => ({
+          organization_id: context.organization.id,
+          property_id: property.id,
+          language_code,
+        })),
+      );
+
+      if (languageInsertError) {
+        return { error: "Unable to update supported languages." };
+      }
     }
 
     await supabase.from("events").insert({
@@ -265,6 +324,9 @@ export async function createWorkspaceKnowledgeAction(
       title: formData.get("title"),
       body: formData.get("body"),
       locale: formData.get("locale") || "en",
+      visibility: formData.get("visibility") || "guest",
+      status: formData.get("status") || "published",
+      sortOrder: formData.get("sortOrder"),
     });
 
     if (!parsed.success) {
@@ -290,7 +352,9 @@ export async function createWorkspaceKnowledgeAction(
       title: parsed.data.title,
       body: parsed.data.body,
       locale: parsed.data.locale,
-      status: "published",
+      visibility: parsed.data.visibility,
+      status: parsed.data.status,
+      sort_order: parsed.data.sortOrder,
     });
 
     if (error) {
@@ -632,4 +696,111 @@ export async function updateWorkspaceGuestAction(
   }
 
   redirect(`${CLIENT_ROUTES.guests}/${guestId}`);
+}
+
+export async function createWorkspaceGuestPortalLinkAction(
+  reservationId: string,
+  previous: GuestPortalLinkState,
+  formData: FormData,
+): Promise<GuestPortalLinkState> {
+  void previous;
+  void formData;
+  try {
+    const context = await requireOrganizationRole(ORGANIZATION_OPERATIONAL_ROLES);
+    const parsedId = uuidSchema.safeParse(reservationId);
+
+    if (!parsedId.success) {
+      return { error: "That reservation is not available in this workspace." };
+    }
+
+    const supabase = await createSupabaseServerClient();
+    const { data: reservation, error: lookupError } = await supabase
+      .from("reservations")
+      .select("id, property_id, guest_id, status")
+      .eq("id", parsedId.data)
+      .eq("organization_id", context.organization.id)
+      .maybeSingle();
+
+    if (lookupError || !reservation || reservation.status === "cancelled") {
+      return { error: "That reservation is not available in this workspace." };
+    }
+
+    await supabase
+      .from("guest_portal_tokens")
+      .update({ revoked_at: new Date().toISOString() })
+      .eq("organization_id", context.organization.id)
+      .eq("reservation_id", reservation.id)
+      .is("revoked_at", null);
+
+    const generated = generateGuestPortalToken();
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const { error } = await supabase.from("guest_portal_tokens").insert({
+      organization_id: context.organization.id,
+      reservation_id: reservation.id,
+      property_id: reservation.property_id,
+      token_hash: generated.hash,
+      expires_at: expiresAt,
+    });
+
+    if (error) {
+      return { error: "Unable to create a guest stay link." };
+    }
+
+    await supabase.from("events").insert({
+      organization_id: context.organization.id,
+      property_id: reservation.property_id,
+      reservation_id: reservation.id,
+      guest_id: reservation.guest_id,
+      actor_user_id: context.user.id,
+      event_type: "guest_portal_created",
+      metadata: { expiresAt },
+    });
+
+    return {
+      portalUrl: guestPortalUrl(getPublicEnv().NEXT_PUBLIC_APP_URL, generated.token),
+    };
+  } catch (error) {
+    if (error instanceof AuthenticationError) {
+      throw error;
+    }
+
+    return { error: publicMutationError(error) };
+  }
+}
+
+export async function revokeWorkspaceGuestPortalLinkAction(
+  reservationId: string,
+  previous: WorkspaceMutationState,
+  formData: FormData,
+): Promise<WorkspaceMutationState> {
+  void previous;
+  void formData;
+  try {
+    const context = await requireOrganizationRole(ORGANIZATION_OPERATIONAL_ROLES);
+    const parsedId = uuidSchema.safeParse(reservationId);
+
+    if (!parsedId.success) {
+      return { error: "That reservation is not available in this workspace." };
+    }
+
+    const supabase = await createSupabaseServerClient();
+    const { error } = await supabase
+      .from("guest_portal_tokens")
+      .update({ revoked_at: new Date().toISOString() })
+      .eq("organization_id", context.organization.id)
+      .eq("reservation_id", parsedId.data)
+      .is("revoked_at", null);
+
+    if (error) {
+      return { error: "Unable to revoke the guest stay link." };
+    }
+  } catch (error) {
+    if (error instanceof AuthenticationError) {
+      throw error;
+    }
+
+    return { error: publicMutationError(error) };
+  }
+
+  redirect(clientReservationPath(reservationId));
 }

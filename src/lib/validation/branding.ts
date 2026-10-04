@@ -41,8 +41,21 @@ export const optionalBrandDisplayNameSchema = z
   })
   .pipe(z.union([z.null(), nonEmptyStringSchema.max(120)]));
 
+export const optionalPublicDescriptionSchema = z
+  .union([z.string(), z.null(), z.undefined()])
+  .transform((value) => {
+    if (value == null) {
+      return null;
+    }
+
+    const trimmed = String(value).trim();
+    return trimmed.length === 0 ? null : trimmed;
+  })
+  .pipe(z.union([z.null(), z.string().trim().min(1).max(500)]));
+
 export const organizationBrandingFieldsSchema = z.object({
   displayName: optionalBrandDisplayNameSchema,
+  publicDescription: optionalPublicDescriptionSchema.optional(),
   primaryColor: optionalBrandColorSchema,
   secondaryColor: optionalBrandColorSchema,
   accentColor: optionalBrandColorSchema,

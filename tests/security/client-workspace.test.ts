@@ -255,6 +255,7 @@ describe("client workspace source isolation", () => {
     const files = [
       ...walkSource(join(root, "components/workspace")),
       ...walkSource(join(root, "lib/workspace")),
+      ...walkSource(join(root, "lib/property-cms")),
       ...walkSource(join(root, "app/app")),
     ];
 

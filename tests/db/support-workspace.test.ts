@@ -53,6 +53,31 @@ describe("support workspace RLS", () => {
     });
   });
 
+  it("lets support read CMS rows but not mutate them", async () => {
+    await asAuthenticated(client, fixture.platformAdmin, async () => {
+      await client.query(
+        "select public.start_support_session($1, 'Inspect property CMS', 120)",
+        [fixture.orgA],
+      );
+
+      const knowledge = await client.query(
+        "select id from public.property_knowledge where organization_id = $1",
+        [fixture.orgA],
+      );
+      expect(knowledge.rowCount).toBeGreaterThan(0);
+
+      await expect(
+        client.query(
+          `
+            insert into public.property_amenities (organization_id, property_id, amenity_key)
+            values ($1, $2, 'workspace')
+          `,
+          [fixture.orgA, fixture.propertyA],
+        ),
+      ).rejects.toThrow(/row-level security/i);
+    });
+  });
+
   it("rejects ended and expired support sessions", async () => {
     await asAuthenticated(client, fixture.platformAdmin, async () => {
       const started = await client.query<{ start_support_session: string }>(

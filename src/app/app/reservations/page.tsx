@@ -44,11 +44,11 @@ export default async function ClientReservationsPage() {
         }
       />
 
-      <ClientSectionCard title="Stay list">
-        {reservations.length === 0 ? (
+      {reservations.length === 0 ? (
+        <ClientSectionCard title="Stays">
           <ClientEmptyState
-            title="Your upcoming reservations will appear here."
-            description="When a stay is booked, the guest, home, and dates will live on this page."
+            title="Your stays will appear here."
+            description="When a reservation is added, the guest, home, and dates will live on this page."
             action={
               canAdd ? (
                 <Button asChild>
@@ -57,47 +57,48 @@ export default async function ClientReservationsPage() {
               ) : null
             }
           />
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b text-onwarda-muted">
-                <tr>
-                  <th className="py-2 font-medium">Guest</th>
-                  <th className="py-2 font-medium">Property</th>
-                  <th className="py-2 font-medium">Arrival</th>
-                  <th className="py-2 font-medium">Departure</th>
-                  <th className="py-2 font-medium">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {reservations.map((reservation) => (
-                  <tr key={reservation.id} className="border-b last:border-0">
-                    <td className="py-3 font-medium">
-                      <Link
-                        href={clientReservationPath(reservation.id)}
-                        className="hover:text-onwarda-olive hover:underline"
-                      >
-                        {guestDisplayName(reservation.guestName)}
-                      </Link>
-                    </td>
-                    <td className="py-3 text-onwarda-muted">
-                      {reservation.propertyName ?? "—"}
-                    </td>
-                    <td className="py-3">{formatDate(reservation.checkIn)}</td>
-                    <td className="py-3">{formatDate(reservation.checkOut)}</td>
-                    <td className="py-3">
+        </ClientSectionCard>
+      ) : (
+        <div className="space-y-6">
+          {Array.from(
+            reservations.reduce((groups, reservation) => {
+              const key = reservation.checkIn.slice(0, 10);
+              const current = groups.get(key) ?? [];
+              current.push(reservation);
+              groups.set(key, current);
+              return groups;
+            }, new Map<string, typeof reservations>()),
+          ).map(([day, stays]) => (
+            <section key={day}>
+              <h2 className="mb-3 text-[0.7rem] font-medium tracking-[0.14em] text-onwarda-muted uppercase">
+                {formatDate(day)}
+              </h2>
+              <ul className="space-y-3">
+                {stays.map((reservation) => (
+                  <li key={reservation.id}>
+                    <Link
+                      href={clientReservationPath(reservation.id)}
+                      className="client-surface client-lift flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div>
+                        <p className="font-medium">{guestDisplayName(reservation.guestName)}</p>
+                        <p className="text-sm text-onwarda-muted">
+                          {reservation.propertyName ?? "Property"} · {formatDate(reservation.checkIn)} –{" "}
+                          {formatDate(reservation.checkOut)}
+                        </p>
+                      </div>
                       <ClientStatusBadge
                         label={reservationStatusLabel(reservation.status)}
                         tone={statusTone(reservation.status)}
                       />
-                    </td>
-                  </tr>
+                    </Link>
+                  </li>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </ClientSectionCard>
+              </ul>
+            </section>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

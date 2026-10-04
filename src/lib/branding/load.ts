@@ -11,14 +11,19 @@ import type { WorkspaceView } from "@/types/auth";
 
 type BrandingColumns = Pick<
   OrganizationBrandingRecord,
-  "display_name" | "logo_path" | "primary_color" | "secondary_color" | "accent_color"
+  | "display_name"
+    | "public_description"
+    | "logo_path"
+    | "primary_color"
+    | "secondary_color"
+    | "accent_color"
 >;
 
 export async function loadOrganizationBrandingRecord(organizationId: string) {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("organization_branding")
-    .select("display_name, logo_path, primary_color, secondary_color, accent_color")
+    .select("display_name, public_description, logo_path, primary_color, secondary_color, accent_color")
     .eq("organization_id", organizationId)
     .maybeSingle();
 

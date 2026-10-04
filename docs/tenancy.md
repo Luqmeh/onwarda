@@ -10,18 +10,29 @@ Onwarda uses one PostgreSQL database and strict logical multi-tenancy.
 organizations
     └── organization_branding   (exactly one; default client brand)
     └── organization_users
-    └── properties
+    └── properties              (canonical CMS object)
+          └── property_languages
+          └── property_amenities
+          └── property_house_rules
+          └── property_content     (visibility: public | guest | private)
+          └── property_media       (images in Storage; external https URLs)
+          └── property_knowledge   (instructions; visibility + published state)
           └── reservations  → guests (organization-scoped, many reservations)
           └── guest_portal_tokens
+          └── guest_rule_acceptances
           └── issues
-          └── property_knowledge
+          └── property_cleaning_agents
+          └── cleaning_tasks
+                └── cleaning_task_items
           └── (future) optional property branding override — not implemented
+    └── cleaning_agents
+          └── cleaning_agent_links   (hash only; one active link)
     └── events
 ```
 
 Every organization-owned row has `organization_id`. Branding is organization-scoped, not a second tenant identity.
 
-A future Guest Portal resolves `reservation → organization → organization_branding`. Public routes stay `/o/{slug}` and later `/g/{opaque-token}`. Storage paths may include the internal organization UUID.
+The Guest Portal resolves `token → reservation → organization → organization_branding` and then `getGuestPropertyContent(property)`. Public routes are `/p/{organizationSlug}` and `/p/{organizationSlug}/{propertySlug}` and use `getPublicPropertyContent(property)` after slug-scoped RPCs. `/o/{slug}` remains the operator workspace entry. Storage paths may include the internal organization UUID. Internal identifiers, private notes, and guest-only access fields must not appear in public-safe loaders.
 
 ## Membership
 

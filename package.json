@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "test:db": "vitest run tests/db",
     "bootstrap:admin": "tsx scripts/bootstrap-admin.ts",
-    "bootstrap:client": "tsx scripts/bootstrap-client.ts"
+    "bootstrap:client": "tsx scripts/bootstrap-client.ts",
+    "smoke:routes": "tsx scripts/smoke-routes.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.5",

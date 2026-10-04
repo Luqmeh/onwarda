@@ -20,6 +20,8 @@ describe("marketing website isolation", () => {
     expect(page).toContain("PricingCards");
     expect(page).not.toContain("299");
     expect(home).toContain("operating layer for hospitality");
+    expect(home).toContain("listPublishedCommercialPlans");
+    expect(home).not.toContain("299");
     expect(home).not.toContain("COGS");
     expect(home).not.toContain("createServiceRoleClient");
   });

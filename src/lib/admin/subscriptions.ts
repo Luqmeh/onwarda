@@ -15,7 +15,10 @@ import {
 } from "@/lib/errors";
 import { setOrganizationSubscriptionSchema } from "@/lib/validation/organization";
 import type { AdminMutationState } from "@/lib/admin/provision";
-import type { OrganizationSubscription } from "@/types/database";
+import type {
+  OrganizationSubscription,
+  OrganizationSubscriptionEvent,
+} from "@/types/database";
 
 function publicSubscriptionError(error: unknown) {
   if (error instanceof ValidationError || error instanceof AppError) {
@@ -59,7 +62,7 @@ export async function getOrganizationSubscription(organizationId: string) {
   const { data, error } = await privileged
     .from("organization_subscriptions")
     .select(
-      "id, organization_id, plan, status, billing_interval, started_at, renews_at, cancelled_at, created_at, updated_at",
+      "id, organization_id, plan, status, billing_interval, started_at, renews_at, cancelled_at, requested_plan, cancellation_requested_at, created_at, updated_at",
     )
     .eq("organization_id", organizationId)
     .maybeSingle();
@@ -73,6 +76,29 @@ export async function getOrganizationSubscription(organizationId: string) {
   }
 
   return (data as OrganizationSubscription | null) ?? null;
+}
+
+export async function getOrganizationSubscriptionHistory(organizationId: string) {
+  await requirePlatformAdmin();
+  const privileged = createServiceRoleClient();
+  const { data, error } = await privileged
+    .from("organization_subscription_events")
+    .select(
+      "id, organization_id, subscription_id, event_type, previous_status, new_status, previous_plan, new_plan, source, actor_user_id, provider_event_id, metadata, created_at",
+    )
+    .eq("organization_id", organizationId)
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  if (error) {
+    throw new AppError(
+      "subscription_history_unavailable",
+      "Unable to load the organization subscription history.",
+      500,
+    );
+  }
+
+  return (data as OrganizationSubscriptionEvent[] | null) ?? [];
 }
 
 export async function setOrganizationSubscriptionAction(

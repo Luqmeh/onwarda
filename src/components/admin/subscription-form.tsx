@@ -68,7 +68,7 @@ export function OrganizationSubscriptionForm({
           <span className="font-medium">Subscription status</span>
           <select
             name="status"
-            defaultValue={subscription?.status ?? "trialing"}
+            defaultValue={subscription?.status ?? "pending"}
             className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm"
           >
             {Object.values(ORGANIZATION_SUBSCRIPTION_STATUSES).map((status) => (
@@ -123,7 +123,8 @@ export function OrganizationSubscriptionForm({
         </div>
       </div>
       <p className="text-xs text-muted-foreground">
-        Manual account-plan records only. Payment provider integration will be added later.
+        Manual subscription record only. Setting a status to active is an administrator
+        activation, not payment confirmation. No payment provider is connected.
       </p>
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">

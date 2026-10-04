@@ -4,8 +4,8 @@ export const ONWARDA_BRAND_MOTTO =
   "We don't just manage properties, we make them bloom.";
 
 /**
- * Production logo artwork is not in the repository yet.
- * `OnwardaWordmark` is the single replacement point when the asset arrives.
+ * Official bee-and-flower mark is rendered by `OnwardaMark`.
+ * Raster identity sheets are reference only and are not used in the UI.
  */
 export const ONWARDA_LOGO_SRC = null as string | null;
 

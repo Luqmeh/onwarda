@@ -58,6 +58,7 @@ export async function updateWorkspaceBrandingAction(
     const organizationId = context.organization.id;
     const parsed = organizationBrandingFieldsSchema.safeParse({
       displayName: formData.get("displayName"),
+      publicDescription: formData.get("publicDescription"),
       primaryColor: formData.get("primaryColor"),
       secondaryColor: formData.get("secondaryColor"),
       accentColor: formData.get("accentColor"),
@@ -72,6 +73,7 @@ export async function updateWorkspaceBrandingAction(
       .from("organization_branding")
       .update({
         display_name: parsed.data.displayName,
+        public_description: parsed.data.publicDescription ?? null,
         primary_color: parsed.data.primaryColor,
         secondary_color: parsed.data.secondaryColor,
         accent_color: parsed.data.accentColor,

@@ -21,7 +21,12 @@ organizations
           └── guest_portal_tokens
           └── guest_rule_acceptances
           └── issues
+          └── property_cleaning_agents
+          └── cleaning_tasks
+                └── cleaning_task_items
           └── (future) optional property branding override — not implemented
+    └── cleaning_agents
+          └── cleaning_agent_links   (hash only; one active link)
     └── events
 ```
 

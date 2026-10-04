@@ -74,6 +74,10 @@ describe("workspace operations authorization", () => {
       join(process.cwd(), "src/lib/workspace/actions.ts"),
       "utf8",
     );
+    const cmsActions = readFileSync(
+      join(process.cwd(), "src/lib/workspace/property-cms-actions.ts"),
+      "utf8",
+    );
     const propertyPage = readFileSync(
       join(process.cwd(), "src/app/app/properties/[propertyId]/page.tsx"),
       "utf8",
@@ -91,13 +95,18 @@ describe("workspace operations authorization", () => {
     expect(actions).toContain("requireOrganizationRole(ORGANIZATION_ADMIN_ROLES)");
     expect(actions).toContain("requireOrganizationRole(ORGANIZATION_OPERATIONAL_ROLES)");
     expect(actions).not.toContain("createServiceRoleClient");
+    expect(cmsActions).not.toContain("createServiceRoleClient");
     expect(actions).not.toContain("requirePlatformAdmin");
+    expect(cmsActions).not.toContain("requirePlatformAdmin");
     expect(actions).not.toContain('formData.get("organizationId")');
+    expect(cmsActions).not.toContain('formData.get("organizationId")');
     expect(actions).toContain("guest.created");
     expect(actions).toContain("reservation.status_changed");
     expect(propertyPage).toContain("getWorkspaceProperty");
-    expect(reservationPage).toContain("Guest Portal");
-    expect(reservationPage).toContain("Not generated yet");
+    expect(reservationPage).toContain("GuestPortalForm");
+    expect(actions).toContain("createWorkspaceGuestPortalLinkAction");
+    expect(actions).toContain("token_hash: generated.hash");
+    expect(actions).not.toContain("token_hash: generated.token");
     expect(guestPage).toContain("getWorkspaceGuest");
   });
 });

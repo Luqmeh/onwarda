@@ -30,7 +30,13 @@ describe("admin route isolation", () => {
   });
 
   it("keeps guest and slug routers out of the auth proxy matcher", () => {
-    expect(config.matcher).toEqual(["/admin/:path*", "/app/:path*", "/login"]);
+    expect(config.matcher).toEqual([
+      "/admin",
+      "/admin/:path*",
+      "/app",
+      "/app/:path*",
+      "/login",
+    ]);
     expect(config.matcher.join(" ")).not.toContain(GUEST_PORTAL_PREFIX);
     expect(config.matcher.join(" ")).not.toContain(`${CLIENT_ACCESS_PREFIX}/`);
     expect(ADMIN_PREFIX).not.toBe(CLIENT_WORKSPACE_PREFIX);

@@ -69,6 +69,7 @@ export function WorkspaceBrandingForm({
     initialState,
   );
   const [displayName, setDisplayName] = useState(branding.storedDisplayName ?? "");
+  const [publicDescription, setPublicDescription] = useState(branding.publicDescription ?? "");
   const [primaryColor, setPrimaryColor] = useState(branding.storedPrimaryColor ?? "");
   const [secondaryColor, setSecondaryColor] = useState(
     branding.storedSecondaryColor ?? "",
@@ -90,6 +91,22 @@ export function WorkspaceBrandingForm({
           />
           <p className="text-xs text-onwarda-muted">
             Guests and staff will see this name. Leave blank to use the organization name.
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="workspace-public-description">Public description</Label>
+          <textarea
+            id="workspace-public-description"
+            name="publicDescription"
+            value={publicDescription}
+            maxLength={500}
+            rows={3}
+            onChange={(event) => setPublicDescription(event.target.value)}
+            className="min-h-24 w-full rounded-lg border bg-background px-3 py-2 text-sm"
+          />
+          <p className="text-xs text-onwarda-muted">
+            Short introduction on the public operator page. Leave blank to hide it.
           </p>
         </div>
 

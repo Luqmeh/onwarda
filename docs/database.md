@@ -38,10 +38,14 @@ Point `.env.local` at the keys printed by `npx supabase status` when developing 
 | `20260905010000_public_and_guest.sql` | Public listing flags, reservation journey, guest rule acceptances, public/guest RPCs |
 | `20260905020000_guest_journey_ux.sql` | Guest journey mutations: rules are not accepted when none exist; arrival notes are token-scoped |
 | `20260905030000_commercial_funnel.sql` | Pending subscriptions, commercial onboarding RPC, marketing events, contact inquiries |
+| `20260923010000_billing_foundation.sql` | Billing lifecycle, requested plan / cancellation request, `organization_subscription_events`, customer billing RPCs |
+| `20260927010000_cleaning_operations.sql` | Cleaning agents, permanent links, property assignments, checkout tasks, checklist snapshots |
 
 ## Tables
 
-Identity: `profiles`, `platform_admins`, `organizations`, `organization_branding`, `organization_users`, `support_sessions`, `organization_subscriptions`
+Identity: `profiles`, `platform_admins`, `organizations`, `organization_branding`, `organization_users`, `support_sessions`, `organization_subscriptions`, `organization_subscription_events`
+
+Cleaning: `cleaning_agents`, `cleaning_agent_links`, `property_cleaning_agents`, `cleaning_tasks`, `cleaning_task_items`. `cleaning_checklist_definitions` is global, not tenant-owned. `cleaning_tasks.assigned_agent_id` is the cleaner for that task. `property_cleaning_agents` is only the property's default team. Manual tasks use `trigger_type = manual` and a null `reservation_id`.
 
 Onwarda company (not tenant-scoped): `commercial_inquiries`
 
@@ -52,6 +56,8 @@ Catalogs (global, not tenant-owned): `amenity_definitions`, `house_rule_definiti
 Guest portal: `guest_portal_tokens`, `guest_rule_acceptances`
 
 Activity: `events` (product, append-only), `audit_logs` (security/admin)
+
+`organization_subscriptions` is the canonical commercial record. Phase 6A added `requested_plan`, `cancellation_requested_at`, and statuses `grace_period` / `suspended`. History lives in `organization_subscription_events` with a unique `provider_event_id` for future webhook idempotency. Members may read their own org; writes go through security-definer RPCs. See [billing.md](./billing.md).
 
 `profiles.id` references `auth.users(id)`. A `SECURITY DEFINER` trigger copies new auth users into `profiles`.
 
@@ -81,6 +87,8 @@ Key format: `organizations/{organization_id}/...`
 Property images live in the private `property-media` bucket at `organizations/{organization_id}/properties/{property_id}/media/{media_id}.{png|jpg|jpeg|webp}`. `property_media` stores that path or an https external URL (video / 360° / instructional). External URLs are validated; iframe HTML is not stored. Property type, amenities, house rules, languages, and content fields are structured. `properties.description` is the short public description. Internal identifiers stay on `properties.internal_identifier` and are omitted from public-safe loaders.
 
 `property_knowledge` is the instruction CMS. It now has `visibility` (`public` | `guest` | `private`) and `sort_order`. Published state still uses `draft` / `published` / `archived`. Guest-safe loaders only return published guest or public entries. Public-safe loaders only return published public entries.
+
+`organization_subscriptions` remains the single commercial subscription table. Phase 6A adds `requested_plan`, `cancellation_requested_at`, and statuses `grace_period` / `suspended` while keeping `pending`, `trialing`, `paused`, and `cancelled`. `organization_subscription_events` is the auditable history table: tenant-scoped, FORCE RLS, reparent-protected, and uniquely indexed on nullable `provider_event_id` for future webhook idempotency. Members may SELECT their own organization's history. Writes go through security-definer RPCs only.
 
 ## Tests
 

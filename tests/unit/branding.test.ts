@@ -132,6 +132,7 @@ describe("branding fallbacks", () => {
       organizationName: "Riad Atlas",
       branding: {
         display_name: "Atlas House",
+        public_description: null,
         logo_path: `organizations/${ORG_ID}/branding/logo.png`,
         primary_color: "#123456",
         secondary_color: "javascript:alert(1)",

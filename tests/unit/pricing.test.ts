@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   COMMERCIAL_PLANS,
+  formatPlanTeaserPrice,
   getCommercialPlan,
   isSelectableCommercialPlan,
   listPublishedCommercialPlans,
@@ -15,7 +16,8 @@ describe("commercial pricing configuration", () => {
     expect(published.map((plan) => plan.id)).toEqual(["starter", "professional", "enterprise"]);
     expect(published.every((plan) => plan.currency === "MAD")).toBe(true);
     expect(getCommercialPlan("starter")?.basePrice).toBe(299);
-    expect(getCommercialPlan("free")).toBeNull();
+    expect(getCommercialPlan("free")?.status).toBe("hidden");
+    expect(formatPlanTeaserPrice(published[0]!)).toContain("MAD");
   });
 
   it("does not treat hidden or unknown plans as selectable", () => {

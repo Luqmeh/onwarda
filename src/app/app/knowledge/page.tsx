@@ -55,7 +55,7 @@ export default async function ClientKnowledgePage() {
         ) : (
           <ul className="divide-y">
             {entries.map((entry) => (
-              <li key={entry.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <li key={entry.id} className="flex flex-col gap-2 border-b border-onwarda-olive/10 py-4 last:border-0 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="font-medium">{entry.title || humanizeToken(entry.category)}</p>
                   <p className="text-sm capitalize text-onwarda-muted">

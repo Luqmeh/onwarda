@@ -76,6 +76,8 @@ export const ORGANIZATION_SUBSCRIPTION_STATUSES = {
   TRIALING: "trialing",
   ACTIVE: "active",
   PAST_DUE: "past_due",
+  GRACE_PERIOD: "grace_period",
+  SUSPENDED: "suspended",
   CANCELLED: "cancelled",
   PAUSED: "paused",
 } as const;

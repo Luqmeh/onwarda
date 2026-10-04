@@ -106,11 +106,16 @@ Used only to avoid RLS recursion and to resolve hashed guest tokens:
 - `can_view_archived(org_id)`
 - `has_active_support_access(org_id)`
 - `admin_set_organization_subscription(...)`
+- `customer_request_subscription_plan_change(...)` / `customer_request_subscription_cancellation()` / `customer_reactivate_subscription()` — owner/admin only; never set `active`
+- `record_organization_subscription_event(...)` — not granted to `authenticated`; called from security-definer RPCs only
 - `admin_set_organization_branding(...)`
 - `admin_set_organization_branding_logo(...)`
 - `handle_new_user()`
 - `resolve_guest_portal_token(hash)` — `service_role` only
 - `inspect_guest_portal_token(hash)` — `service_role` only
+- `inspect_cleaner_link(hash)`, `get_cleaner_home`, `get_cleaner_task`, and cleaner mutation RPCs — `service_role` only. They never return a raw token.
+- `workspace_issue_cleaning_link` / `workspace_set_cleaning_agent_active` / `workspace_reopen_cleaning_task` / `workspace_cancel_cleaning_task` — authenticated owner/admin, organization from membership
+- `workspace_create_manual_cleaning` / `workspace_assign_cleaning_task` — authenticated owner/admin/manager. The organization is read from the property or task. A browser `organization_id` is not an argument. A new assignee must be an active cleaner in that organization.
 - `get_guest_stay_bundle(hash)` and guest mutation RPCs — `service_role` only
 - `get_public_operator_portfolio(slug)` / `get_public_property_showcase(org_slug, property_slug)` — `anon` and `authenticated`, public fields only
 - `authorize_public_property_media` / `authorize_public_operator_logo` — path only, after slug checks
@@ -121,11 +126,14 @@ Each sets `search_path = public` and is revoked from `PUBLIC`. Do not grant `ano
 ## Known limitations
 
 - Support workspace access is read-only and session-scoped. It never inserts `organization_users`.
-- Subscription records are maintained manually by platform admins. Stripe and other payment providers are not integrated yet.
+- Subscription records are provider-neutral. Signup creates a **pending** `organization_subscriptions` row. `active` is never implied by plan selection. Stripe and other payment providers are not integrated. See [billing.md](./billing.md).
+- Customer billing mutations derive the organization from membership. The browser cannot supply `organization_id`, a price, or a status.
+- `organization_subscription_events` is readable to members, support, and platform admins. Writes are security-definer only. `provider_event_id` is unique when present so future webhooks can be idempotent.
 - Service role can still read all data; operators must treat that key as production-secret.
 - Archived records are hidden from manager/staff by RLS, but remain visible to owner/admin.
 - Guest ID/document upload is not implemented. The `guest-documents` bucket remains private.
 - Inspecting a guessed token that does not match a stored hash returns the same invalid state as a malformed token. Expired and revoked are distinguished only after a hash match.
+- Cleaner links are a separate hashed bearer secret for `/cleaner/[token]`. They do not authorize `/app`, `/admin`, `/g`, or `/p`. The raw value is shown once and is not stored. See [cleaning.md](./cleaning.md).
 
 ## Testing
 

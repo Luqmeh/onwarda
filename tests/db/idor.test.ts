@@ -109,4 +109,14 @@ describe("IDOR against tenant-owned UUIDs", () => {
       ).rejects.toThrow();
     });
   });
+
+  it("rejects a knowledge UUID belonging to another organization", async () => {
+    await asAuthenticated(client, fixture.userA, async () => {
+      const result = await client.query(
+        "select * from public.property_knowledge where id = $1",
+        [fixture.knowledgeB],
+      );
+      expect(result.rowCount).toBe(0);
+    });
+  });
 });

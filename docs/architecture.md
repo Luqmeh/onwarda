@@ -19,9 +19,10 @@ Onwarda is a modular monolith. One Next.js application and one PostgreSQL databa
 ## Application contexts
 
 - `/admin/*` — Onwarda internal admin. Platform administrators only.
-- `/app/*` — Client operator workspace. Organization-scoped.
+- `/app/*` — Client operator workspace. Organization-scoped. Visual system: [client-workspace.md](./client-workspace.md). `/app/billing` is the customer subscription page.
 - `/o/[slug]` — Slug-based client access point. The organization UUID is the canonical identity.
 - `/g/[token]` — Guest portal. Opaque reservation tokens, no Onwarda user account.
+- `/cleaner/[token]` — Permanent cleaner profile link. Not an Onwarda user. Not a per-task URL.
 - `/p/[organizationSlug]` — Public operator portfolio. Active, listed properties only.
 - `/p/[organizationSlug]/[propertySlug]` — Public property showcase. Slugs only; no UUIDs.
 - `/`, `/product`, `/pricing`, `/signup`, and related marketing routes — Onwarda company website. Not tenant-scoped.
@@ -104,6 +105,8 @@ Organization context always comes from membership (or support-mode read access).
 
 Content visibility is explicit: `public`, `guest`, or `private`. Server-side loaders `getPublicPropertyContent()` and `getGuestPropertyContent()` project a CMS snapshot. They never return internal identifiers, private notes, or guest-only access secrets on the public projection. Do not load everything and hide fields in React.
 
+The operations calendar on `/app` and `/app/calendar` is a read-only projection in the same spirit. `getWorkspaceCalendar()` derives a property-row timeline from `properties`, `reservations`, and `cleaning_tasks`. It owns no tables and writes nothing, so reservations and cleaning tasks stay the single source of truth for what is booked and what needs turning over. See `docs/client-workspace.md`.
+
 ## Public and guest surfaces
 
 Public pages call SECURITY DEFINER RPCs (`get_public_operator_portfolio`, `get_public_property_showcase`) granted to `anon`/`authenticated`, then project with `getPublicPropertyContent()`. Guest pages hash the URL token and call service-role-only RPCs (`inspect_guest_portal_token`, `get_guest_stay_bundle`, guest mutations), then project with `getGuestPropertyContent()`. Neither surface queries tenant tables as `anon`.
@@ -114,4 +117,8 @@ A property is public only when `status = active` and `is_listed_publicly = true`
 
 ## What is not built yet
 
-PMS/OTA integrations, Stripe, smart-lock APIs, AI guest agent, advanced CRM/analytics, property-specific branding overrides, custom domains, ID document upload, and white-label billing. The public booking CTA is an optional https URL, not a payment engine.
+PMS/OTA integrations, Stripe / CMI / Payzone / any card processor, smart-lock APIs, AI guest agent, advanced CRM/analytics, property-specific branding overrides, custom domains, ID document upload, invoices, contractual recurring billing, cleaner accounts, and cleaning notifications. The public booking CTA is an optional https URL, not a payment engine.
+
+Guest checkout creates one cleaning task and a property hold. Cleaners use one revocable `/cleaner/[token]` link. See [cleaning.md](./cleaning.md).
+
+Billing is provider-neutral. `organization_subscriptions` is the canonical commercial record. `src/config/pricing.ts` is the canonical price catalog. `src/lib/billing` talks to a `PaymentProvider` interface whose current implementation is `UnavailablePaymentProvider`. `active` means explicitly activated, not “plan selected.” See [billing.md](./billing.md).

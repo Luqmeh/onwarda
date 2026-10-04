@@ -7,16 +7,20 @@ import {
   ClientSectionCard,
   ClientStatusBadge,
 } from "@/components/workspace/client-ui";
+import { GuestPortalForm } from "@/components/workspace/guest-portal-form";
 import { ReservationStatusForm } from "@/components/workspace/reservation-status-form";
+import { getReservationCleaningStatus } from "@/lib/cleaning/load";
 import {
-  CLIENT_ROUTES,
-  canManageStays,
-  clientGuestPath,
-  clientPropertyPath,
-} from "@/config/client";
+  CLEANING_TASK_STATUS_LABELS,
+  PROPERTY_READINESS_LABELS,
+  type CleaningTaskStatus,
+  type PropertyReadiness,
+} from "@/lib/cleaning/catalog";
+import { CLIENT_ROUTES, canManageStays, cleaningTaskPath, clientGuestPath, clientPropertyPath } from "@/config/client";
 import { NotFoundError } from "@/lib/errors";
 import { requireWorkspaceView } from "@/lib/tenancy/workspace-access";
 import { getWorkspaceReservation } from "@/lib/workspace/data";
+import { JOURNEY_STATUS_LABELS } from "@/lib/guest-portal/journey";
 import {
   formatDate,
   guestDisplayName,
@@ -25,6 +29,7 @@ import {
   reservationStatusLabel,
   statusTone,
 } from "@/lib/workspace/format";
+import type { ReservationJourneyStatus } from "@/types/enums";
 
 export const metadata = {
   title: "Reservation",
@@ -89,6 +94,9 @@ export default async function ClientReservationDetailPage({
   const guestReady = Boolean(reservation.guestFirstName && reservation.guestLastName);
   const arrivalReady =
     reservation.status === "active" || reservation.status === "completed";
+  const cleaning = reservation.checkoutCompletedAt
+    ? await getReservationCleaningStatus(reservation.id)
+    : null;
 
   return (
     <div className="space-y-6">
@@ -132,6 +140,18 @@ export default async function ClientReservationDetailPage({
               <dd className="mt-1 font-medium">{formatDate(reservation.createdAt)}</dd>
             </div>
           </dl>
+          {cleaning ? (
+            <div className="mt-5 border-t pt-5 text-sm">
+              <p className="font-medium">
+                Checked out ·{" "}
+                {PROPERTY_READINESS_LABELS[cleaning.readiness as PropertyReadiness] ??
+                  CLEANING_TASK_STATUS_LABELS[cleaning.status as CleaningTaskStatus]}
+              </p>
+              <Link href={cleaningTaskPath(cleaning.id)} className="mt-2 inline-block font-medium underline underline-offset-4">
+                View cleaning task
+              </Link>
+            </div>
+          ) : null}
           {canUpdate ? (
             <div className="mt-5 border-t pt-5">
               <ReservationStatusForm
@@ -173,7 +193,11 @@ export default async function ClientReservationDetailPage({
 
       <ClientSectionCard
         title="Guest journey"
-        description="The guest portal is not generated in this phase."
+        description={
+          JOURNEY_STATUS_LABELS[
+            (reservation.journeyStatus ?? "not_started") as ReservationJourneyStatus
+          ]
+        }
       >
         <ul className="divide-y">
           <JourneyStep
@@ -191,20 +215,48 @@ export default async function ClientReservationDetailPage({
             }
           />
           <JourneyStep
-            title="Arrival information"
-            state={arrivalReady ? "complete" : "pending"}
+            title="Onboarding"
+            state={reservation.onboardingCompletedAt ? "complete" : "pending"}
             detail={
-              arrivalReady
-                ? "The stay has reached in-stay or completed."
-                : "Arrival details stay pending until the stay begins."
+              reservation.onboardingCompletedAt
+                ? "The guest has submitted arrival information."
+                : "Waiting for the guest to complete onboarding."
             }
           />
           <JourneyStep
-            title="Guest Portal"
-            state="later"
-            detail="Not generated yet. Guest-facing access comes in a later phase."
+            title="House rules"
+            state={reservation.rulesAcceptedAt ? "complete" : "pending"}
+            detail={
+              reservation.rulesAcceptedAt
+                ? "The guest accepted the current house rules."
+                : "Rules have not been accepted yet."
+            }
+          />
+          <JourneyStep
+            title="Checkout"
+            state={reservation.checkoutCompletedAt || arrivalReady ? (reservation.checkoutCompletedAt ? "complete" : "pending") : "later"}
+            detail={
+              reservation.checkoutCompletedAt
+                ? "The guest marked checkout complete."
+                : "Checkout is recorded from the guest portal."
+            }
           />
         </ul>
+        {canUpdate ? (
+          <div className="mt-5 border-t pt-5">
+            <GuestPortalForm
+              reservationId={reservation.id}
+              hasActiveLink={reservation.guestPortal.hasActiveLink}
+              expiresAt={reservation.guestPortal.expiresAt}
+            />
+          </div>
+        ) : (
+          <p className="mt-5 text-sm text-onwarda-muted">
+            {reservation.guestPortal.hasActiveLink
+              ? "A guest stay link is active."
+              : "A guest stay link has not been generated."}
+          </p>
+        )}
       </ClientSectionCard>
 
       {reservation.issues.length > 0 ? (

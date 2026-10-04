@@ -87,6 +87,20 @@ export const COMMERCIAL_PLANS: readonly CommercialPlan[] = [
     displayOrder: 3,
     status: "published",
   },
+  {
+    id: ORGANIZATION_PLANS.FREE,
+    name: "Complimentary",
+    description: "Internal complimentary access. Not offered for self-serve signup.",
+    basePrice: 0,
+    currency: PRICING_CURRENCY,
+    billingInterval: PRICING_INTERVAL,
+    propertyAllowance: { min: 0, max: null },
+    perPropertyPrice: null,
+    features: ["Not published for customer selection"],
+    cta: { label: "Talk to Onwarda", href: "/contact", kind: "contact" },
+    displayOrder: 99,
+    status: "hidden",
+  },
 ] as const;
 
 export function listPublishedCommercialPlans() {
@@ -106,6 +120,10 @@ export function getCommercialPlan(id: string | null | undefined) {
 export function isSelectableCommercialPlan(id: string | null | undefined): id is OrganizationPlan {
   const plan = getCommercialPlan(id);
   return Boolean(plan && plan.status === "published");
+}
+
+export function formatPlanTeaserPrice(plan: CommercialPlan) {
+  return `from ${plan.basePrice.toLocaleString("en-US")} ${plan.currency}/${plan.billingInterval}`;
 }
 
 export function formatPlanPrice(plan: CommercialPlan) {

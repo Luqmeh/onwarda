@@ -5,12 +5,16 @@ import {
   ISSUE_CATEGORIES,
   ISSUE_PRIORITIES,
   ISSUE_STATUSES,
-  PROPERTY_KNOWLEDGE_CATEGORIES,
   PROPERTY_STATUSES,
   RESERVATION_STATUSES,
-  SUPPORTED_LOCALES,
 } from "@/types/enums";
 import { dateSchema, emailSchema, nonEmptyStringSchema, uuidSchema } from "@/lib/validation/common";
+
+export {
+  createWorkspaceKnowledgeSchema,
+  createWorkspacePropertySchema,
+  updateWorkspacePropertySchema,
+} from "@/lib/validation/property-cms";
 
 export const propertyDraftSchema = z.object({
   name: nonEmptyStringSchema.max(120),
@@ -22,19 +26,6 @@ export const propertyDraftSchema = z.object({
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   status: z.enum(PROPERTY_STATUSES).default("draft"),
 });
-
-export const createWorkspacePropertySchema = z.object({
-  name: nonEmptyStringSchema.max(120),
-  city: z.string().trim().max(80).optional(),
-  country: z.string().trim().max(80).optional(),
-  status: z.enum([
-    PROPERTY_STATUSES.DRAFT,
-    PROPERTY_STATUSES.ACTIVE,
-    PROPERTY_STATUSES.INACTIVE,
-  ]),
-});
-
-export const updateWorkspacePropertySchema = createWorkspacePropertySchema;
 
 const optionalGuestEmailSchema = z
   .union([z.string(), z.undefined(), z.null()])
@@ -124,14 +115,6 @@ export const updateWorkspaceReservationStatusSchema = z.object({
 export const updateWorkspaceIssueStatusSchema = z.object({
   issueId: uuidSchema,
   status: z.enum(ISSUE_STATUSES),
-});
-
-export const createWorkspaceKnowledgeSchema = z.object({
-  propertyId: uuidSchema,
-  category: z.enum(PROPERTY_KNOWLEDGE_CATEGORIES),
-  title: nonEmptyStringSchema.max(160),
-  body: nonEmptyStringSchema.max(8000),
-  locale: z.enum(SUPPORTED_LOCALES).default(SUPPORTED_LOCALES.ENGLISH),
 });
 
 export const guestDraftSchema = z.object({

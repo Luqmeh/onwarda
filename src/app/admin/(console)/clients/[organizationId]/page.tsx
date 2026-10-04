@@ -21,7 +21,10 @@ import { OrganizationBrandingForm } from "@/components/admin/organization-brandi
 import { OrganizationSubscriptionForm } from "@/components/admin/subscription-form";
 import { getAdminOrganizationBranding } from "@/lib/admin/branding";
 import { getAdminOrganization } from "@/lib/admin/organizations";
-import { getOrganizationSubscription } from "@/lib/admin/subscriptions";
+import {
+  getOrganizationSubscription,
+  getOrganizationSubscriptionHistory,
+} from "@/lib/admin/subscriptions";
 import { getActiveSupportSession } from "@/lib/admin/support";
 import { NotFoundError } from "@/lib/errors";
 import { uuidSchema } from "@/lib/validation/common";
@@ -78,9 +81,10 @@ export default async function AdminClientDetailPage({
   }
 
   const query = await searchParams;
-  const [supportSession, subscription, branding] = await Promise.all([
+  const [supportSession, subscription, subscriptionHistory, branding] = await Promise.all([
     getActiveSupportSession(),
     getOrganizationSubscription(parsedId.data),
+    getOrganizationSubscriptionHistory(parsedId.data),
     getAdminOrganizationBranding(parsedId.data),
   ]);
   const accessUrl = clientAccessUrl(getPublicEnv().NEXT_PUBLIC_APP_URL, organization.slug);
@@ -294,7 +298,8 @@ export default async function AdminClientDetailPage({
         <CardHeader>
           <CardTitle>Subscription</CardTitle>
           <CardDescription>
-            Manual plan records only. Stripe and payment processing are not connected yet.
+            Manual subscription record only. Setting active is an administrator activation, not
+            payment confirmation. No payment provider is connected.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -316,11 +321,41 @@ export default async function AdminClientDetailPage({
               </dd>
             </div>
             <div>
+              <dt className="text-muted-foreground">Created</dt>
+              <dd className="mt-1 font-medium">
+                {subscription?.created_at
+                  ? new Date(subscription.created_at).toLocaleDateString()
+                  : "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Start date</dt>
+              <dd className="mt-1 font-medium">
+                {subscription?.started_at
+                  ? new Date(subscription.started_at).toLocaleDateString()
+                  : "—"}
+              </dd>
+            </div>
+            <div>
               <dt className="text-muted-foreground">Renewal date</dt>
               <dd className="mt-1 font-medium">
                 {subscription?.renews_at
                   ? new Date(subscription.renews_at).toLocaleDateString()
-                  : "—"}
+                  : "Unknown until billing is configured"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Requested plan</dt>
+              <dd className="mt-1 font-medium capitalize">
+                {subscription?.requested_plan ?? "None"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Cancellation requested</dt>
+              <dd className="mt-1 font-medium">
+                {subscription?.cancellation_requested_at
+                  ? new Date(subscription.cancellation_requested_at).toLocaleDateString()
+                  : "No"}
               </dd>
             </div>
           </dl>
@@ -328,6 +363,26 @@ export default async function AdminClientDetailPage({
             organizationId={organization.id}
             subscription={subscription}
           />
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium">Subscription history</h3>
+            {subscriptionHistory.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No subscription history yet.</p>
+            ) : (
+              <ul className="space-y-2 text-sm">
+                {subscriptionHistory.map((event) => (
+                  <li key={event.id} className="rounded-md border px-3 py-2">
+                    <p className="font-medium">{event.event_type}</p>
+                    <p className="text-muted-foreground">
+                      {new Date(event.created_at).toLocaleString()} · {event.source}
+                      {event.previous_status || event.new_status
+                        ? ` · ${event.previous_status ?? "none"} → ${event.new_status ?? "none"}`
+                        : null}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </CardContent>
       </Card>
 

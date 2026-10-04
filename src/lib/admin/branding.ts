@@ -36,6 +36,7 @@ type BrandingRow = Pick<
   OrganizationBrandingRecord,
   | "organization_id"
   | "display_name"
+  | "public_description"
   | "logo_path"
   | "primary_color"
   | "secondary_color"
@@ -108,7 +109,7 @@ export async function getAdminOrganizationBranding(
       privileged
         .from("organization_branding")
         .select(
-          "organization_id, display_name, logo_path, primary_color, secondary_color, accent_color",
+          "organization_id, display_name, public_description, logo_path, primary_color, secondary_color, accent_color",
         )
         .eq("organization_id", parsedId.data)
         .maybeSingle(),

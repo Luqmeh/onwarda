@@ -42,6 +42,7 @@ export const RESERVED_ORGANIZATION_SLUGS = [
 
 export const CLIENT_ACCESS_PREFIX = "/o";
 export const GUEST_PORTAL_PREFIX = "/g";
+export const CLEANER_PROFILE_PREFIX = "/cleaner";
 export const PUBLIC_PORTFOLIO_PREFIX = "/p";
 export const ADMIN_PREFIX = "/admin";
 export const CLIENT_WORKSPACE_PREFIX = "/app";
@@ -73,6 +74,14 @@ export function clientAccessUrl(appUrl: string, slug: string) {
 
 export function guestPortalUrl(appUrl: string, token: string) {
   return joinAppUrl(appUrl, guestPortalPath(token));
+}
+
+export function cleanerProfilePath(token: string) {
+  return `${CLEANER_PROFILE_PREFIX}/${token}`;
+}
+
+export function cleanerProfileUrl(appUrl: string, token: string) {
+  return joinAppUrl(appUrl, cleanerProfilePath(token));
 }
 
 /**

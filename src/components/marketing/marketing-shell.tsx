@@ -3,60 +3,37 @@ import Link from "next/link";
 
 import { OnwardaWordmark } from "@/components/brand/onwarda-wordmark";
 import { MarketingNav } from "@/components/marketing/marketing-nav";
-import { ONWARDA_TAGLINE } from "@/config/brand";
-import {
-  MARKETING_FOOTER_COMPANY,
-  MARKETING_FOOTER_PRODUCT,
-  MARKETING_ROUTES,
-} from "@/config/marketing";
+import { MARKETING_NAV, MARKETING_ROUTES } from "@/config/marketing";
 
 export function MarketingShell({ children }: { children: ReactNode }) {
   return (
     <div className="onwarda-marketing min-h-svh">
       <MarketingNav />
       <main>{children}</main>
-      <footer className="mt-20 border-t border-[var(--mk-line)]">
-        <div className="mx-auto grid max-w-6xl gap-10 px-5 py-12 md:grid-cols-4">
-          <div className="md:col-span-2">
-            <OnwardaWordmark className="text-[var(--mk-ink)]" />
-            <p className="mt-3 max-w-sm text-sm leading-relaxed text-[var(--mk-muted)]">
-              {ONWARDA_TAGLINE} One operating layer for hospitality.
-            </p>
-          </div>
+      <footer className="border-t border-[var(--mk-line)]">
+        <div className="mx-auto flex max-w-6xl flex-col gap-8 px-5 py-12 md:flex-row md:items-start md:justify-between md:px-8">
           <div>
-            <p className="mk-kicker">Product</p>
-            <ul className="mt-3 grid gap-2 text-sm">
-              {MARKETING_FOOTER_PRODUCT.map((item) => (
-                <li key={item.href}>
-                  <Link href={item.href} className="underline-offset-4 hover:underline">
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <OnwardaWordmark tagline />
           </div>
-          <div>
-            <p className="mk-kicker">Company</p>
-            <ul className="mt-3 grid gap-2 text-sm">
-              {MARKETING_FOOTER_COMPANY.map((item) => (
-                <li key={item.href}>
-                  <Link href={item.href} className="underline-offset-4 hover:underline">
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-              <li>
-                <Link href={MARKETING_ROUTES.privacy} className="underline-offset-4 hover:underline">
-                  Privacy
-                </Link>
-              </li>
-              <li>
-                <Link href={MARKETING_ROUTES.terms} className="underline-offset-4 hover:underline">
-                  Terms
-                </Link>
-              </li>
-            </ul>
-          </div>
+          <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-3 text-sm text-[var(--mk-muted)]">
+            {MARKETING_NAV.map((item) => (
+              <Link key={item.href} href={item.href} className="hover:text-[var(--mk-ink)]">
+                {item.label}
+              </Link>
+            ))}
+            <Link href={MARKETING_ROUTES.contact} className="hover:text-[var(--mk-ink)]">
+              Contact
+            </Link>
+            <Link href={MARKETING_ROUTES.login} className="hover:text-[var(--mk-ink)]">
+              Login
+            </Link>
+            <Link href={MARKETING_ROUTES.privacy} className="hover:text-[var(--mk-ink)]">
+              Privacy
+            </Link>
+            <Link href={MARKETING_ROUTES.terms} className="hover:text-[var(--mk-ink)]">
+              Terms
+            </Link>
+          </nav>
         </div>
       </footer>
     </div>

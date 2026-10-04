@@ -1,4 +1,14 @@
 import type {
+  ContentVisibility,
+  HouseRuleKey,
+  HouseRuleState,
+  PropertyAmenity,
+  PropertyContentField,
+  PropertyContentLanguage,
+  PropertyMediaRole,
+  PropertyMediaType,
+} from "@/lib/property-cms/catalog";
+import type {
   ActorType,
   BookingSource,
   IssueCategory,
@@ -13,7 +23,10 @@ import type {
   OrganizationUserStatus,
   PlatformAdminRole,
   PlatformAdminStatus,
+  PropertyKnowledgeCategory,
   PropertyStatus,
+  PropertyType,
+  ReservationJourneyStatus,
   ReservationStatus,
   SubscriptionStatus,
 } from "@/types/enums";
@@ -65,6 +78,7 @@ export type OrganizationBrandingRecord = {
   primary_color: string | null;
   secondary_color: string | null;
   accent_color: string | null;
+  public_description: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -86,7 +100,7 @@ export type Property = {
   slug: string;
   internal_identifier: string | null;
   description: string | null;
-  property_type: string | null;
+  property_type: PropertyType | null;
   address: string | null;
   city: string | null;
   country: string | null;
@@ -99,6 +113,65 @@ export type Property = {
   check_out_time: string | null;
   timezone: string | null;
   status: PropertyStatus;
+  is_listed_publicly: boolean;
+  booking_url: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PropertyLanguage = {
+  id: string;
+  organization_id: string;
+  property_id: string;
+  language_code: PropertyContentLanguage;
+  created_at: string;
+};
+
+export type PropertyAmenityRecord = {
+  id: string;
+  organization_id: string;
+  property_id: string;
+  amenity_key: PropertyAmenity;
+  sort_order: number;
+  created_at: string;
+};
+
+export type PropertyHouseRule = {
+  id: string;
+  organization_id: string;
+  property_id: string;
+  rule_key: HouseRuleKey;
+  state: HouseRuleState;
+  details: string | null;
+  visibility: ContentVisibility;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PropertyContentRecord = {
+  id: string;
+  organization_id: string;
+  property_id: string;
+  field_key: PropertyContentField;
+  body: string;
+  visibility: ContentVisibility;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PropertyMedia = {
+  id: string;
+  organization_id: string;
+  property_id: string;
+  media_type: PropertyMediaType;
+  role: PropertyMediaRole | null;
+  storage_path: string | null;
+  external_url: string | null;
+  sort_order: number;
+  caption: string | null;
+  alt_text: string | null;
+  visibility: ContentVisibility;
   created_at: string;
   updated_at: string;
 };
@@ -127,8 +200,26 @@ export type Reservation = {
   number_of_guests: number;
   notes: string | null;
   status: ReservationStatus;
+  journey_status: ReservationJourneyStatus;
+  onboarding_completed_at: string | null;
+  rules_accepted_at: string | null;
+  rules_accepted_version: string | null;
+  checkout_completed_at: string | null;
+  arrival_notes: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type GuestRuleAcceptance = {
+  id: string;
+  organization_id: string;
+  property_id: string;
+  reservation_id: string;
+  guest_id: string;
+  rules_version: string;
+  rules_snapshot: unknown;
+  accepted_at: string;
+  created_at: string;
 };
 
 export type GuestPortalToken = {
@@ -147,11 +238,13 @@ export type PropertyKnowledge = {
   id: string;
   organization_id: string;
   property_id: string;
-  category: string;
+  category: PropertyKnowledgeCategory;
   title: string | null;
   body: string;
   locale: "en" | "fr" | "ar";
   status: "draft" | "published" | "archived";
+  visibility: ContentVisibility;
+  sort_order: number;
   created_at: string;
   updated_at: string;
 };
@@ -206,8 +299,26 @@ export type OrganizationSubscription = {
   started_at: string;
   renews_at: string | null;
   cancelled_at: string | null;
+  requested_plan: OrganizationPlan | null;
+  cancellation_requested_at: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type OrganizationSubscriptionEvent = {
+  id: string;
+  organization_id: string;
+  subscription_id: string;
+  event_type: string;
+  previous_status: OrganizationSubscriptionStatus | null;
+  new_status: OrganizationSubscriptionStatus | null;
+  previous_plan: OrganizationPlan | null;
+  new_plan: OrganizationPlan | null;
+  source: "system" | "admin" | "customer" | "provider";
+  actor_user_id: string | null;
+  provider_event_id: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
 };
 
 export type SupportSession = {

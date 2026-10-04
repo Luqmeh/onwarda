@@ -30,53 +30,38 @@ export default async function ClientIssuesPage() {
         description="Housekeeping, access, and guest requests for this organization. Permission to change an issue is enforced on the server, not by this page."
       />
 
-      <ClientSectionCard title="Open and recent">
-        {issues.length === 0 ? (
+      {issues.length === 0 ? (
+        <ClientSectionCard title="House matters">
           <ClientEmptyState
             title="Everything is quiet."
-            description="When something needs attention in a home, it will show here with its property, priority, and status."
+            description="When a home needs attention, it will show here with its property, priority, and status."
           />
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b text-onwarda-muted">
-                <tr>
-                  <th className="py-2 font-medium">Issue</th>
-                  <th className="py-2 font-medium">Property</th>
-                  <th className="py-2 font-medium">Priority</th>
-                  <th className="py-2 font-medium">Status</th>
-                  <th className="py-2 font-medium">Created</th>
-                </tr>
-              </thead>
-              <tbody>
-                {issues.map((issue) => (
-                  <tr key={issue.id} className="border-b last:border-0">
-                    <td className="py-3">
-                      <p className="font-medium capitalize">{humanizeToken(issue.category)}</p>
-                      <p className="line-clamp-1 text-onwarda-muted">{issue.description}</p>
-                    </td>
-                    <td className="py-3 text-onwarda-muted">{issue.propertyName ?? "—"}</td>
-                    <td className="py-3">
-                      <ClientStatusBadge label={issue.priority} tone={statusTone(issue.priority)} />
-                    </td>
-                    <td className="py-3">
-                      {canUpdate ? (
-                        <IssueStatusForm issueId={issue.id} status={issue.status} />
-                      ) : (
-                        <ClientStatusBadge
-                          label={humanizeToken(issue.status)}
-                          tone={statusTone(issue.status)}
-                        />
-                      )}
-                    </td>
-                    <td className="py-3 text-onwarda-muted">{formatDate(issue.createdAt)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </ClientSectionCard>
+        </ClientSectionCard>
+      ) : (
+        <ul className="space-y-3">
+          {issues.map((issue) => (
+            <li key={issue.id} className="client-surface p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="font-medium capitalize">{humanizeToken(issue.category)}</p>
+                  <p className="mt-1 text-sm text-onwarda-muted">{issue.description}</p>
+                  <p className="mt-2 text-sm text-onwarda-muted">
+                    {issue.propertyName ?? "Workspace"} · {formatDate(issue.createdAt)}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <ClientStatusBadge label={issue.priority} tone={statusTone(issue.priority)} />
+                  {canUpdate ? (
+                    <IssueStatusForm issueId={issue.id} status={issue.status} />
+                  ) : (
+                    <ClientStatusBadge label={humanizeToken(issue.status)} tone={statusTone(issue.status)} />
+                  )}
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

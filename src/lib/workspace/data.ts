@@ -3,6 +3,7 @@ import "server-only";
 import { resolveValidSupportWorkspace } from "@/lib/authorization/support-workspace";
 import { AppError, AuthorizationError, NotFoundError } from "@/lib/errors";
 import { createSupabaseServerClient } from "@/lib/database/server";
+import { createPropertyMediaSignedUrl } from "@/lib/property-cms/signed-url";
 import { requireCurrentOrganization } from "@/lib/tenancy/context";
 import { uuidSchema } from "@/lib/validation/common";
 import type { Organization } from "@/types/database";
@@ -241,7 +242,7 @@ export async function listWorkspaceProperties() {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("properties")
-    .select("id, name, status, city, country, reservations(count)")
+    .select("id, name, status, operational_readiness, city, country, property_type, reservations(count)")
     .eq("organization_id", organization.id)
     .order("name", { ascending: true });
 
@@ -253,8 +254,10 @@ export async function listWorkspaceProperties() {
     id: row.id,
     name: row.name,
     status: row.status,
+    readiness: row.operational_readiness,
     city: row.city,
     country: row.country,
+    propertyType: row.property_type,
     reservationCount: metricCount(row.reservations?.[0]?.count),
   }));
 }
@@ -355,7 +358,7 @@ export async function listWorkspaceKnowledge() {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("property_knowledge")
-    .select("id, title, category, status, locale, properties(name)")
+    .select("id, title, category, status, locale, visibility, properties(name)")
     .eq("organization_id", organization.id)
     .order("created_at", { ascending: false })
     .limit(50);
@@ -370,6 +373,7 @@ export async function listWorkspaceKnowledge() {
     category: row.category,
     status: row.status,
     locale: row.locale,
+    visibility: row.visibility,
     propertyName: firstEmbed(row.properties)?.name ?? null,
   }));
 }
@@ -412,6 +416,23 @@ function requireTenantUuid(value: string) {
   return parsed.data;
 }
 
+function asNumber(value: unknown) {
+  if (value == null || value === "") {
+    return null;
+  }
+
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function asTime(value: unknown) {
+  if (typeof value !== "string" || value.length === 0) {
+    return null;
+  }
+
+  return value.slice(0, 5);
+}
+
 export async function getWorkspaceProperty(propertyId: string) {
   const organization = await requireWorkspaceTenant();
   const id = requireTenantUuid(propertyId);
@@ -422,6 +443,11 @@ export async function getWorkspaceProperty(propertyId: string) {
     reservations,
     openIssues,
     knowledge,
+    languages,
+    amenities,
+    houseRules,
+    content,
+    media,
     reservationCount,
     openIssueCount,
     knowledgeCount,
@@ -429,15 +455,20 @@ export async function getWorkspaceProperty(propertyId: string) {
   ] = await Promise.all([
     supabase
       .from("properties")
-      .select("id, name, status, city, country, created_at")
+      .select(
+        `
+        id, name, slug, status, city, country, address, created_at,
+        internal_identifier, description, property_type, capacity, bedrooms,
+        bathrooms, check_in_time, check_out_time,
+        is_listed_publicly, booking_url
+      `,
+      )
       .eq("id", id)
       .eq("organization_id", organization.id)
       .maybeSingle(),
     supabase
       .from("reservations")
-      .select(
-        "id, check_in, check_out, status, guests(id, first_name, last_name)",
-      )
+      .select("id, check_in, check_out, status, guests(id, first_name, last_name)")
       .eq("organization_id", organization.id)
       .eq("property_id", id)
       .order("check_in", { ascending: false })
@@ -452,11 +483,41 @@ export async function getWorkspaceProperty(propertyId: string) {
       .limit(8),
     supabase
       .from("property_knowledge")
-      .select("id, title, category, status, locale")
+      .select("id, title, category, status, locale, body, visibility, sort_order")
       .eq("organization_id", organization.id)
       .eq("property_id", id)
-      .order("created_at", { ascending: false })
-      .limit(8),
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("property_languages")
+      .select("language_code")
+      .eq("organization_id", organization.id)
+      .eq("property_id", id),
+    supabase
+      .from("property_amenities")
+      .select("amenity_key, sort_order")
+      .eq("organization_id", organization.id)
+      .eq("property_id", id)
+      .order("sort_order", { ascending: true }),
+    supabase
+      .from("property_house_rules")
+      .select("rule_key, state, details, visibility, sort_order")
+      .eq("organization_id", organization.id)
+      .eq("property_id", id)
+      .order("sort_order", { ascending: true }),
+    supabase
+      .from("property_content")
+      .select("field_key, body, visibility")
+      .eq("organization_id", organization.id)
+      .eq("property_id", id),
+    supabase
+      .from("property_media")
+      .select(
+        "id, media_type, role, storage_path, external_url, sort_order, caption, alt_text, visibility",
+      )
+      .eq("organization_id", organization.id)
+      .eq("property_id", id)
+      .order("sort_order", { ascending: true }),
     supabase
       .from("reservations")
       .select("id", { count: "exact", head: true })
@@ -485,6 +546,11 @@ export async function getWorkspaceProperty(propertyId: string) {
     reservations.error ||
     openIssues.error ||
     knowledge.error ||
+    languages.error ||
+    amenities.error ||
+    houseRules.error ||
+    content.error ||
+    media.error ||
     reservationCount.error ||
     openIssueCount.error ||
     knowledgeCount.error ||
@@ -501,13 +567,59 @@ export async function getWorkspaceProperty(propertyId: string) {
     (stayGuests.data ?? []).map((row) => row.guest_id).filter(Boolean),
   );
 
+  const mediaRows = media.data ?? [];
+  const signedUrls = await Promise.all(
+    mediaRows.map(async (row) =>
+      row.storage_path ? createPropertyMediaSignedUrl(row.storage_path) : null,
+    ),
+  );
+
   return {
     id: property.id,
+    organizationId: organization.id,
     name: property.name,
+    slug: property.slug,
     status: property.status,
     city: property.city,
     country: property.country,
+    address: property.address,
+    internalIdentifier: property.internal_identifier,
+    description: property.description,
+    propertyType: property.property_type,
+    capacity: asNumber(property.capacity),
+    bedrooms: asNumber(property.bedrooms),
+    bathrooms: asNumber(property.bathrooms),
+    checkInTime: asTime(property.check_in_time),
+    checkOutTime: asTime(property.check_out_time),
+    isListedPublicly: Boolean(property.is_listed_publicly),
+    bookingUrl: property.booking_url,
     createdAt: property.created_at,
+    languages: (languages.data ?? []).map((row) => row.language_code),
+    amenities: (amenities.data ?? []).map((row) => row.amenity_key),
+    houseRules: (houseRules.data ?? []).map((row) => ({
+      ruleKey: row.rule_key,
+      state: row.state,
+      details: row.details,
+      visibility: row.visibility,
+      sortOrder: row.sort_order,
+    })),
+    content: (content.data ?? []).map((row) => ({
+      fieldKey: row.field_key,
+      body: row.body,
+      visibility: row.visibility,
+    })),
+    media: mediaRows.map((row, index) => ({
+      id: row.id,
+      mediaType: row.media_type,
+      role: row.role,
+      storagePath: row.storage_path,
+      externalUrl: row.external_url,
+      sortOrder: row.sort_order,
+      caption: row.caption,
+      altText: row.alt_text,
+      visibility: row.visibility,
+      signedUrl: signedUrls[index] ?? null,
+    })),
     reservationCount: metricCount(reservationCount.count),
     stayGuestCount: uniqueGuests.size,
     openIssueCount: metricCount(openIssueCount.count),
@@ -534,6 +646,9 @@ export async function getWorkspaceProperty(propertyId: string) {
       category: row.category,
       status: row.status,
       locale: row.locale,
+      body: row.body,
+      visibility: row.visibility,
+      sortOrder: row.sort_order,
     })),
   };
 }
@@ -543,7 +658,7 @@ export async function getWorkspaceReservation(reservationId: string) {
   const id = requireTenantUuid(reservationId);
   const supabase = await createSupabaseServerClient();
 
-  const [{ data: reservation, error }, issues] = await Promise.all([
+  const [{ data: reservation, error }, issues, portalTokens] = await Promise.all([
     supabase
       .from("reservations")
       .select(
@@ -555,6 +670,10 @@ export async function getWorkspaceReservation(reservationId: string) {
         created_at,
         reservation_reference,
         booking_source,
+        journey_status,
+        onboarding_completed_at,
+        rules_accepted_at,
+        checkout_completed_at,
         property_id,
         guest_id,
         properties(id, name, city, country),
@@ -571,9 +690,16 @@ export async function getWorkspaceReservation(reservationId: string) {
       .eq("reservation_id", id)
       .order("created_at", { ascending: false })
       .limit(8),
+    supabase
+      .from("guest_portal_tokens")
+      .select("id, expires_at, revoked_at, created_at")
+      .eq("organization_id", organization.id)
+      .eq("reservation_id", id)
+      .order("created_at", { ascending: false })
+      .limit(5),
   ]);
 
-  if (error || issues.error) {
+  if (error || issues.error || portalTokens.error) {
     fail("workspace_reservation_unavailable", "Unable to load this reservation.");
   }
 
@@ -592,6 +718,23 @@ export async function getWorkspaceReservation(reservationId: string) {
     createdAt: reservation.created_at,
     reference: reservation.reservation_reference,
     bookingSource: reservation.booking_source,
+    journeyStatus: reservation.journey_status,
+    onboardingCompletedAt: reservation.onboarding_completed_at,
+    rulesAcceptedAt: reservation.rules_accepted_at,
+    checkoutCompletedAt: reservation.checkout_completed_at,
+    guestPortal: (() => {
+      const now = Date.now();
+      const tokens = portalTokens.data ?? [];
+      const active = tokens.find(
+        (row) => !row.revoked_at && (!row.expires_at || new Date(row.expires_at).getTime() > now),
+      );
+
+      return {
+        hasActiveLink: Boolean(active),
+        expiresAt: active?.expires_at ?? null,
+        createdAt: active?.created_at ?? tokens[0]?.created_at ?? null,
+      };
+    })(),
     propertyId: reservation.property_id,
     guestId: reservation.guest_id,
     propertyName: property?.name ?? "Property",

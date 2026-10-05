@@ -1,15 +1,23 @@
+"use client";
+
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import { OnwardaWordmark } from "@/components/brand/onwarda-wordmark";
+import { HomeFooter, HomeNav } from "@/components/marketing/home-chrome";
 import { MarketingNav } from "@/components/marketing/marketing-nav";
 import { MARKETING_NAV, MARKETING_ROUTES } from "@/config/marketing";
 
 export function MarketingShell({ children }: { children: ReactNode }) {
+  const home = usePathname() === "/";
+
   return (
     <div className="onwarda-marketing min-h-svh">
-      <MarketingNav />
+      {home ? <HomeNav /> : <MarketingNav />}
       <main>{children}</main>
+      {home ? <HomeFooter /> : null}
+      {home ? null : (
       <footer className="border-t border-[var(--mk-line)]">
         <div className="mx-auto flex max-w-6xl flex-col gap-8 px-5 py-12 md:flex-row md:items-start md:justify-between md:px-8">
           <div>
@@ -36,6 +44,7 @@ export function MarketingShell({ children }: { children: ReactNode }) {
           </nav>
         </div>
       </footer>
+      )}
     </div>
   );
 }

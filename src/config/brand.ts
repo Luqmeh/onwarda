@@ -3,11 +3,8 @@ export const ONWARDA_TAGLINE = "Guest journeys. Simplified.";
 export const ONWARDA_BRAND_MOTTO =
   "We don't just manage properties, we make them bloom.";
 
-/**
- * Official bee-and-flower mark is rendered by `OnwardaMark`.
- * Raster identity sheets are reference only and are not used in the UI.
- */
-export const ONWARDA_LOGO_SRC = null as string | null;
+/** Supplied logo sheet. Components frame the existing lockup; the file is not redrawn. */
+export const ONWARDA_LOGO_SRC = "/brand/onwarda-logo.jpg" as const;
 
 export const ONWARDA_COLOR_TOKENS = {
   cream: "#F8F2ED",

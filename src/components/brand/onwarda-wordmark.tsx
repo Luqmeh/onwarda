@@ -1,5 +1,4 @@
-import { OnwardaMark } from "@/components/brand/onwarda-mark";
-import { ONWARDA_TAGLINE } from "@/config/brand";
+import { ONWARDA_LOGO_SRC } from "@/config/brand";
 import { cn } from "@/lib/utils";
 
 type OnwardaWordmarkProps = {
@@ -8,46 +7,66 @@ type OnwardaWordmarkProps = {
   tagline?: boolean;
 };
 
-const MARK_CLASS = {
-  sm: "h-7 w-[1.35rem]",
-  md: "h-9 w-[1.7rem]",
-  lg: "h-12 w-9",
+const SHEET = { width: 1024, height: 682 };
+
+const CROPS = {
+  horizontal: { x: 566, y: 148, width: 376, height: 86 },
+  horizontalTagline: { x: 566, y: 148, width: 376, height: 100 },
+  stacked: { x: 140, y: 96, width: 244, height: 180 },
 } as const;
 
-const TYPE_CLASS = {
-  sm: "text-[0.95rem] leading-none",
-  md: "text-[1.15rem] leading-none",
-  lg: "text-2xl leading-none",
+const HEIGHT = {
+  sm: 32,
+  md: 40,
+  lg: 56,
 } as const;
+
+function LogoFrame({
+  crop,
+  height,
+  className,
+}: {
+  crop: (typeof CROPS)[keyof typeof CROPS];
+  height: number;
+  className?: string;
+}) {
+  const scale = height / crop.height;
+
+  return (
+    <span
+      className={cn("inline-block overflow-hidden", className)}
+      style={{ width: crop.width * scale, height }}
+      role="img"
+      aria-label="Onwarda"
+    >
+      <img
+        src={ONWARDA_LOGO_SRC}
+        alt=""
+        draggable={false}
+        style={{
+          width: SHEET.width * scale,
+          height: SHEET.height * scale,
+          maxWidth: "none",
+          marginLeft: -crop.x * scale,
+          marginTop: -crop.y * scale,
+        }}
+      />
+    </span>
+  );
+}
 
 export function OnwardaWordmark({ className, size = "md", tagline = false }: OnwardaWordmarkProps) {
   return (
-    <span className={cn("text-onwarda-olive", className)}>
-      <span className="inline-flex items-center gap-2.5">
-        <OnwardaMark decorative className={MARK_CLASS[size]} />
-        <span className="min-w-0">
-          <span className={cn("block font-medium tracking-tight lowercase", TYPE_CLASS[size])}>
-            onwarda
-          </span>
-          {tagline ? (
-            <span className="mt-1.5 block text-[0.58rem] leading-none tracking-[0.22em] text-onwarda-olive/80 uppercase">
-              {ONWARDA_TAGLINE}
-            </span>
-          ) : null}
-        </span>
-      </span>
+    <span className={cn("inline-flex", className)}>
+      <LogoFrame crop={tagline ? CROPS.horizontalTagline : CROPS.horizontal} height={tagline ? 48 : HEIGHT[size]} />
     </span>
   );
 }
 
 export function OnwardaLockup({ className }: { className?: string }) {
   return (
-    <span className={cn("inline-flex flex-col items-center text-onwarda-olive", className)}>
-      <OnwardaMark decorative className="h-[5.5rem] w-[4.25rem]" />
-      <span className="mt-4 text-[2rem] font-medium tracking-tight lowercase md:text-[2.35rem]">
-        onwarda
-      </span>
-      <span className="mt-2.5 text-[0.62rem] tracking-[0.24em] uppercase">{ONWARDA_TAGLINE}</span>
+    <span className={cn("inline-flex", className)}>
+      <LogoFrame crop={CROPS.stacked} height={96} />
     </span>
   );
 }

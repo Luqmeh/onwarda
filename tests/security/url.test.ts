@@ -14,8 +14,14 @@ describe("auth redirect host control", () => {
     const signup = read("src/lib/commercial/actions.ts");
     const signOut = read("src/lib/auth/actions.ts");
 
+    for (const source of [provision, members]) {
+      expect(source).toContain('authRedirectUrl("/onboarding")');
+      expect(source).not.toContain('authRedirectUrl("/login")');
+    }
+
+    expect(signup).toContain('authRedirectUrl("/login")');
+
     for (const source of [provision, members, signup]) {
-      expect(source).toContain('authRedirectUrl("/login")');
       expect(source).not.toContain("localhost:3000");
       expect(source).not.toContain("onwarda-3bux.vercel.app");
       expect(source).not.toContain('formData.get("redirect');

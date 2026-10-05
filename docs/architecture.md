@@ -83,7 +83,7 @@ The Guest Portal at `/g/{token}` resolves `token → reservation → guest → p
 
 Production and preview builds throw `AppUrlConfigurationError` instead of emitting localhost links when the origin is missing. A production value of localhost is also rejected.
 
-Auth emails use `authRedirectUrl("/login")` for owner invites, member invites, and signup confirmation. There is no `/auth/callback` route and no in-app password-reset action. A reset sent from the Supabase dashboard follows the hosted Site URL, which must be the production origin. Login `next` values stay on `safeInternalPath` (internal `/app`, `/admin`, `/signup`, `/o/{slug}` only).
+Auth emails use `authRedirectUrl("/onboarding")` for owner and member invites, and `authRedirectUrl("/login")` for signup confirmation. The invite link is verified in the browser, then `/onboarding` accepts the membership. Normal login stays on `/login`. There is no `/auth/callback` route and no in-app password-reset action. A reset sent from the Supabase dashboard follows the hosted Site URL, which must be the production origin. Login `next` values stay on `safeInternalPath` (internal `/app`, `/admin`, `/signup`, `/o/{slug}` only).
 
 Guest, cleaner, organization, and public property links use the same origin: `/g/{token}`, `/cleaner/{token}`, `/o/{slug}`, `/p/{org}/{property}`. Relative links stay relative. Tokens are path segments only; the helper does not log them.
 

@@ -132,7 +132,7 @@ async function assertOwnerIsAttachable(
 async function inviteOwner(email: string) {
   const privileged = createServiceRoleClient();
   const { data, error } = await privileged.auth.admin.inviteUserByEmail(email, {
-    redirectTo: authRedirectUrl("/login"),
+    redirectTo: authRedirectUrl("/onboarding"),
     data: { onwarda_role: "owner" },
   });
 

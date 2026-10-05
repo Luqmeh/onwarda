@@ -155,7 +155,7 @@ describe("admin client membership workflow", () => {
     });
 
     expect(inviteUserByEmail).toHaveBeenCalledWith("manager@example.com", {
-      redirectTo: "http://localhost:3000/login",
+      redirectTo: "http://localhost:3000/onboarding",
       data: { onwarda_role: "manager" },
     });
     expect(rpc).toHaveBeenCalledWith("admin_invite_organization_user", {

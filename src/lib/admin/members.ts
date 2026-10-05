@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 
 import { adminClientPath } from "@/config/admin";
-import { getPublicEnv } from "@/config/env";
+import { authRedirectUrl } from "@/lib/url";
 import { requirePlatformAdmin } from "@/lib/authorization/platform-admin";
 import { createServiceRoleClient } from "@/lib/database/admin";
 import { createSupabaseServerClient } from "@/lib/database/server";
@@ -137,9 +137,8 @@ async function assertMemberIsAttachable(
 
 async function inviteAuthUser(email: string, role: string) {
   const privileged = createServiceRoleClient();
-  const appUrl = getPublicEnv().NEXT_PUBLIC_APP_URL;
   const { data, error } = await privileged.auth.admin.inviteUserByEmail(email, {
-    redirectTo: new URL("/login", appUrl).toString(),
+    redirectTo: authRedirectUrl("/onboarding"),
     data: { onwarda_role: role },
   });
 

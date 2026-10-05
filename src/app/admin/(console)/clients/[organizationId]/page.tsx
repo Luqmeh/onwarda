@@ -15,8 +15,8 @@ import { TransferOwnershipForm } from "@/components/admin/transfer-ownership-for
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ADMIN_ROUTES } from "@/config/admin";
-import { getPublicEnv } from "@/config/env";
 import { clientAccessPath, clientAccessUrl } from "@/config/app";
+import { getAppUrl } from "@/lib/url";
 import { OrganizationBrandingForm } from "@/components/admin/organization-branding-form";
 import { OrganizationSubscriptionForm } from "@/components/admin/subscription-form";
 import { getAdminOrganizationBranding } from "@/lib/admin/branding";
@@ -87,7 +87,7 @@ export default async function AdminClientDetailPage({
     getOrganizationSubscriptionHistory(parsedId.data),
     getAdminOrganizationBranding(parsedId.data),
   ]);
-  const accessUrl = clientAccessUrl(getPublicEnv().NEXT_PUBLIC_APP_URL, organization.slug);
+  const accessUrl = clientAccessUrl(getAppUrl(), organization.slug);
   const created = query.created === "1";
   const invitationSent = query.invited === "1";
   const notice = query.notice || (query.status === "updated" ? "updated" : "");

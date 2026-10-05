@@ -72,5 +72,5 @@ export async function signInAction(
 export async function signOutAction(redirectTo = "/login") {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
-  redirect(redirectTo);
+  redirect(safeInternalPath(redirectTo, "/login"));
 }

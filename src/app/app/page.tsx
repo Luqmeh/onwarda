@@ -17,6 +17,7 @@ import {
   clientReservationPath,
 } from "@/config/client";
 import { resolveCalendarAnchor, resolveCalendarView, todayDateKey } from "@/lib/calendar/model";
+import { loadOnboardingSnapshot, readOnboardingGate } from "@/lib/onboarding/load";
 import { getWorkspaceDashboard } from "@/lib/workspace/data";
 import {
   formatDate,
@@ -38,6 +39,16 @@ export default async function ClientOverviewPage({
 }) {
   const query = await searchParams;
   const dashboard = await getWorkspaceDashboard();
+  const setup = await readOnboardingGate()
+    .then(async (gate) => {
+      if (gate.status !== "completed") {
+        return [];
+      }
+
+      const snapshot = await loadOnboardingSnapshot(false);
+      return snapshot.checklist.filter((item) => item.optional && !item.done);
+    })
+    .catch(() => []);
   const today = todayDateKey();
   const calendarView = resolveCalendarView(query.view);
   const calendarAnchor = resolveCalendarAnchor(query.date, today);
@@ -62,6 +73,16 @@ export default async function ClientOverviewPage({
           Your organization is ready. The selected plan is pending. Payment setup is coming next — nothing has been
           charged.
         </p>
+      ) : null}
+      {setup.length > 0 ? (
+        <section className="client-surface p-5 sm:p-6">
+          <h2 className="text-base font-medium">Complete your workspace</h2>
+          <ul className="mt-3 space-y-1 text-sm text-onwarda-muted">
+            {setup.map((item) => (
+              <li key={item.label}>{item.label}</li>
+            ))}
+          </ul>
+        </section>
       ) : null}
 
       <Suspense key={`${calendarView}-${calendarAnchor}`} fallback={<OperationsCalendarSkeleton />}>

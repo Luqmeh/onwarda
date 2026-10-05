@@ -144,7 +144,7 @@ describe("admin provisioning workflow", () => {
     });
 
     expect(inviteUserByEmail).toHaveBeenCalledWith("owner@example.com", {
-      redirectTo: "http://localhost:3000/login",
+      redirectTo: "http://localhost:3000/onboarding",
       data: { onwarda_role: "owner" },
     });
     expect(inviteUserByEmail.mock.calls[0]?.[1]).not.toHaveProperty("password");

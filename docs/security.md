@@ -23,6 +23,8 @@ A client-supplied `organization_id` is never treated as proof of access. Policie
 
 A client user who reaches `/admin` is rejected after authentication.
 
+Auth redirects (`inviteUserByEmail`, signup `emailRedirectTo`, and sign-out) use `getAppUrl()` plus a root-relative path. The browser cannot supply the redirect host. `safeInternalPath` rejects external, protocol-relative, `javascript:`, and `data:` values on login continuation.
+
 ## Platform admin separation
 
 - `platform_admins` is a separate table from `organization_users`.

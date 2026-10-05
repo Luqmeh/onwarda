@@ -9,6 +9,7 @@ import { getPlatformAdminContext } from "@/lib/authorization/platform-admin";
 import { resolveValidSupportWorkspace } from "@/lib/authorization/support-workspace";
 import { AuthenticationError, AuthorizationError } from "@/lib/errors";
 import { loadWorkspaceBranding } from "@/lib/branding/load";
+import { readOnboardingGate } from "@/lib/onboarding/load";
 import { requireCurrentOrganization } from "@/lib/tenancy/context";
 import type { WorkspaceView } from "@/types/auth";
 
@@ -59,6 +60,17 @@ export default async function ClientWorkspaceLayout({
       }
     } else {
       throw error;
+    }
+  }
+
+  if (
+    view.kind === "membership" &&
+    (view.context.membership.role === "owner" || view.context.membership.role === "admin")
+  ) {
+    const onboarding = await readOnboardingGate();
+
+    if (onboarding.status && onboarding.status !== "completed") {
+      redirect("/onboarding");
     }
   }
 

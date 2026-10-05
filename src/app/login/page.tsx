@@ -9,6 +9,7 @@ import { CLIENT_LOGIN, CLIENT_ROUTES } from "@/config/client";
 import { SignInForm } from "@/features/auth/sign-in-form";
 import { getCurrentUser } from "@/lib/auth/session";
 import { safeInternalPath } from "@/lib/auth/safe-path";
+import { readOnboardingGate } from "@/lib/onboarding/load";
 import { recordMarketingEvent } from "@/lib/marketing/events";
 import { getCurrentOrganization } from "@/lib/tenancy/context";
 
@@ -31,6 +32,17 @@ export default async function ClientLoginPage({
   }
 
   if (user) {
+    const onboarding = await readOnboardingGate().catch(() => null);
+
+    if (
+      onboarding &&
+      (onboarding.role === "owner" || onboarding.role === "admin") &&
+      onboarding.status &&
+      onboarding.status !== "completed"
+    ) {
+      redirect("/onboarding");
+    }
+
     if (
       nextPath.startsWith("/signup") ||
       nextPath.startsWith("/pricing") ||

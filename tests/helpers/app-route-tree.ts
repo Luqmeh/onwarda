@@ -17,6 +17,7 @@ export const REQUIRED_STATIC_ROUTES = [
   "/terms",
   "/signup",
   "/login",
+  "/onboarding",
   "/admin",
   "/admin/login",
   "/admin/clients",

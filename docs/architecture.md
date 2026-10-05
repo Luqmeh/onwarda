@@ -73,18 +73,39 @@ The Guest Portal at `/g/{token}` resolves `token → reservation → guest → p
 
 ## Hosting and URLs
 
-`NEXT_PUBLIC_APP_URL` is the only origin used to build links.
+`NEXT_PUBLIC_APP_URL` is the only configured origin. `src/lib/url.ts` (`resolveAppUrl` / `getAppUrl`) is the only place that turns that setting into an absolute URL. Feature code must not hard-code `localhost` or the production hostname.
 
-Current client URL shape:
+| Environment | Origin |
+| --- | --- |
+| Local development | `http://localhost:3000` (`NEXT_PUBLIC_APP_URL`, or this fallback only when `NODE_ENV` is not production) |
+| Production | `https://onwarda-3bux.vercel.app` via `NEXT_PUBLIC_APP_URL`. The long `*.vercel.app` deployment hostname is not the canonical site. |
+| Preview | `https://$VERCEL_URL` only when `VERCEL_ENV=preview` and `NEXT_PUBLIC_APP_URL` is unset. An explicit origin always wins, so a preview URL cannot replace production. |
 
-`{APP_URL}/o/{slug}`
+Production and preview builds throw `AppUrlConfigurationError` instead of emitting localhost links when the origin is missing. A production value of localhost is also rejected.
 
-The resolver is isolated so later versions can add:
+Auth emails use `authRedirectUrl("/onboarding")` for owner and member invites, and `authRedirectUrl("/login")` for signup confirmation. The invite link is verified in the browser, then `/onboarding` accepts the membership. Normal login stays on `/login`. There is no `/auth/callback` route and no in-app password-reset action. A reset sent from the Supabase dashboard follows the hosted Site URL, which must be the production origin. Login `next` values stay on `safeInternalPath` (internal `/app`, `/admin`, `/signup`, `/o/{slug}` only).
 
-- `{slug}.onwarda.com`
-- customer custom domains
+Guest, cleaner, organization, and public property links use the same origin: `/g/{token}`, `/cleaner/{token}`, `/o/{slug}`, `/p/{org}/{property}`. Relative links stay relative. Tokens are path segments only; the helper does not log them.
 
-Do not hard-code production hostnames in feature code.
+### Dashboard settings this repository cannot change
+
+Set these before the next production deployment. This codebase does not write to Vercel or hosted Supabase.
+
+Vercel → Project → Settings → Environment Variables → Production:
+
+`NEXT_PUBLIC_APP_URL` = `https://onwarda-3bux.vercel.app`
+
+Leave Development as `http://localhost:3000`. Do not set the production origin on Preview if preview auth should stay on that deployment's host.
+
+Supabase → Authentication → URL Configuration:
+
+- Site URL: `https://onwarda-3bux.vercel.app`
+- Additional redirect URLs: `https://onwarda-3bux.vercel.app/login`, `http://localhost:3000/login`
+- Preview, only if preview login emails should work: `https://*.vercel.app/login`
+
+Auth email templates (Invite user, Confirm signup, Reset password) should keep `{{ .ConfirmationURL }}`, which honors `redirectTo`. Do not replace it with a bare `{{ .SiteURL }}` or a localhost link.
+
+Changing the Vercel variable does not update an already built deployment. Redeploy production after saving it.
 
 ## Internationalization
 

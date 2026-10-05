@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { CLIENT_ROUTES } from "@/config/client";
+import { authRedirectUrl } from "@/lib/url";
 import { getCommercialPlan, isSelectableCommercialPlan } from "@/config/pricing";
 import { createServiceRoleClient } from "@/lib/database/admin";
 import { createSupabaseServerClient } from "@/lib/database/server";
@@ -118,6 +119,7 @@ export async function commercialSignupAction(
     password: parsed.data.password,
     options: {
       data: { full_name: parsed.data.fullName },
+      emailRedirectTo: authRedirectUrl("/login"),
     },
   });
 

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Noto_Sans_Arabic, Plus_Jakarta_Sans } from "next/font/google";
 
 import { APP_NAME } from "@/config/app";
+import { getAppUrl } from "@/lib/url";
 import { cn } from "@/lib/utils";
 
 import "./globals.css";
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
   },
   description:
     "Onwarda is the operating layer for hospitality. Attract guests, guide every stay, and operate from one digital layer.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
+  metadataBase: new URL(getAppUrl()),
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

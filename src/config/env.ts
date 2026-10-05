@@ -1,11 +1,11 @@
 import { z } from "zod";
 
-import { DEFAULT_APP_URL } from "@/config/app";
+import { getAppUrl, resetAppUrlCache } from "@/lib/url";
 
 export const publicEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.url(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
-  NEXT_PUBLIC_APP_URL: z.url().default(DEFAULT_APP_URL),
+  NEXT_PUBLIC_APP_URL: z.url(),
 });
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
@@ -20,7 +20,7 @@ function readPublicEnvValues() {
   return {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || DEFAULT_APP_URL,
+    NEXT_PUBLIC_APP_URL: getAppUrl(),
   };
 }
 
@@ -44,4 +44,5 @@ export function getPublicEnv(): PublicEnv {
 
 export function resetEnvCache() {
   publicEnv = undefined;
+  resetAppUrlCache();
 }

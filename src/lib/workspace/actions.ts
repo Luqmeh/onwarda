@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 
 import { guestPortalUrl } from "@/config/app";
-import { getPublicEnv } from "@/config/env";
+import { getAppUrl } from "@/lib/url";
 import { CLIENT_ROUTES, clientPropertyPath, clientReservationPath } from "@/config/client";
 import { generateGuestPortalToken } from "@/lib/guest-portal/tokens";
 import {
@@ -757,7 +757,7 @@ export async function createWorkspaceGuestPortalLinkAction(
     });
 
     return {
-      portalUrl: guestPortalUrl(getPublicEnv().NEXT_PUBLIC_APP_URL, generated.token),
+      portalUrl: guestPortalUrl(getAppUrl(), generated.token),
     };
   } catch (error) {
     if (error instanceof AuthenticationError) {

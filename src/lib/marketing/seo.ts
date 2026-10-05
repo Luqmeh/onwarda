@@ -1,15 +1,11 @@
 import type { Metadata } from "next";
 
-import { APP_NAME, DEFAULT_APP_URL } from "@/config/app";
+import { APP_NAME } from "@/config/app";
 import { ONWARDA_TAGLINE } from "@/config/brand";
-import { getPublicEnv } from "@/config/env";
+import { buildAppUrl, getAppUrl } from "@/lib/url";
 
 export function marketingSiteUrl(path = "/") {
-  try {
-    return new URL(path, getPublicEnv().NEXT_PUBLIC_APP_URL).toString();
-  } catch {
-    return new URL(path, DEFAULT_APP_URL).toString();
-  }
+  return buildAppUrl(getAppUrl(), path);
 }
 
 export function marketingMetadata(input: {

@@ -96,7 +96,7 @@ Example: create a local owner for Riad Atlas, then sign in at `/login`.
 | `NEXT_PUBLIC_SUPABASE_URL` | Browser + server | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser + server | Public anon key, RLS-enforced |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server only | Privileged admin operations |
-| `NEXT_PUBLIC_APP_URL` | Browser + server | Canonical app origin for links |
+| `NEXT_PUBLIC_APP_URL` | Browser + server | Canonical app origin. Local: `http://localhost:3000`. Production: `https://onwarda-3bux.vercel.app`. Required in production; never falls back to localhost there. |
 
 Never expose `SUPABASE_SERVICE_ROLE_KEY` to the browser.
 

@@ -64,7 +64,7 @@ describe("cleaner profile URL", () => {
     );
     const actions = readFileSync(join(process.cwd(), "src/lib/cleaning/actions.ts"), "utf8");
 
-    expect(actions).toContain("cleanerProfileUrl(getPublicEnv().NEXT_PUBLIC_APP_URL, issued.token)");
+    expect(actions).toContain("cleanerProfileUrl(getAppUrl(), issued.token)");
     expect(actions).toContain("p_token_hash: issued.hash");
     expect(form).toContain("href={state.link}");
     expect(form).toContain("CopyLinkButton value={state.link}");

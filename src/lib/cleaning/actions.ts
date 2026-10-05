@@ -3,9 +3,9 @@
 import { redirect } from "next/navigation";
 
 import { cleanerProfileUrl } from "@/config/app";
+import { getAppUrl } from "@/lib/url";
 import { cleaningAgentPath, cleaningTaskPath, CLIENT_ROUTES } from "@/config/client";
 import { manualCleaningDraft } from "@/lib/cleaning/assignment";
-import { getPublicEnv } from "@/config/env";
 import { recordCleaningEvent } from "@/lib/cleaning/events";
 import { generateCleanerToken } from "@/lib/cleaning/tokens";
 import { DOMAIN_EVENT_TYPES } from "@/lib/events/types";
@@ -212,7 +212,7 @@ export async function issueCleaningLinkAction(
     }
 
     return {
-      link: cleanerProfileUrl(getPublicEnv().NEXT_PUBLIC_APP_URL, issued.token),
+      link: cleanerProfileUrl(getAppUrl(), issued.token),
     };
   } catch (error) {
     if (error instanceof AuthenticationError) {

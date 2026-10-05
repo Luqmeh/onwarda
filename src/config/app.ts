@@ -1,3 +1,5 @@
+import { buildAppUrl } from "@/lib/url";
+
 export const APP_NAME = "Onwarda";
 
 export const DEFAULT_APP_URL = "http://localhost:3000";
@@ -65,7 +67,7 @@ export function guestPortalPath(token: string, suffix = "") {
 }
 
 export function joinAppUrl(appUrl: string, path: string) {
-  return new URL(path, appUrl).toString();
+  return buildAppUrl(appUrl, path);
 }
 
 export function clientAccessUrl(appUrl: string, slug: string) {

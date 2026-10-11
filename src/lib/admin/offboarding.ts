@@ -1,13 +1,18 @@
 import "server-only";
 
-import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { ADMIN_ROUTES } from "@/config/admin";
 import { requirePlatformAdmin } from "@/lib/authorization/platform-admin";
 import { createServiceRoleClient } from "@/lib/database/admin";
 import { createSupabaseServerClient } from "@/lib/database/server";
-import { AppError, AuthenticationError, AuthorizationError, NotFoundError, ValidationError } from "@/lib/errors";
+import { AppError, NotFoundError, ValidationError } from "@/lib/errors";
+import type {
+  DeletionActionState,
+  DeletionAuthSummary,
+  DeletionCleanupState,
+  DeletionCounts,
+  OrganizationDeletionPreview,
+} from "@/lib/admin/offboarding-types";
 import { uuidSchema } from "@/lib/validation/common";
 import { ORGANIZATION_STATUSES } from "@/types/enums";
 
@@ -23,62 +28,6 @@ const deletionRequestSchema = z.object({
   confirmation: z.string().trim().min(1).max(63),
   acknowledge: z.literal(true),
 });
-
-export type DeletionCounts = {
-  organizations: number;
-  onboarding: number;
-  branding: number;
-  members: number;
-  properties: number;
-  reservations: number;
-  guests: number;
-  guestPortalTokens: number;
-  guestRuleAcceptances: number;
-  propertyLanguages: number;
-  propertyAmenities: number;
-  propertyHouseRules: number;
-  propertyContent: number;
-  propertyKnowledge: number;
-  propertyMedia: number;
-  issues: number;
-  events: number;
-  cleaningAgents: number;
-  cleaningAgentLinks: number;
-  propertyCleaningAgents: number;
-  cleaningTasks: number;
-  cleaningTaskItems: number;
-  subscriptions: number;
-  subscriptionEvents: number;
-  supportSessions: number;
-  auditLogs: number;
-  storageObjects: number;
-};
-
-export type DeletionAuthSummary = {
-  eligible: number;
-  shared: number;
-  platformAdmins: number;
-  review: number;
-};
-
-export type OrganizationDeletionPreview = {
-  counts: DeletionCounts;
-  auth: DeletionAuthSummary;
-  preservedShared: string[];
-};
-
-export type DeletionCleanupState = {
-  jobId: string;
-  storageRemoved: boolean;
-  databaseRemoved: boolean;
-  authRemoved: boolean;
-  detail: string;
-};
-
-export type DeletionActionState = {
-  error?: string;
-  incomplete?: DeletionCleanupState;
-};
 
 type PreviewPayload = {
   status: string;
@@ -573,47 +522,6 @@ export async function permanentlyDeleteOrganization(input: {
   return { incomplete: result };
 }
 
-export async function permanentlyDeleteOrganizationAction(
-  _previous: DeletionActionState,
-  formData: FormData,
-): Promise<DeletionActionState> {
-  try {
-    const result = await permanentlyDeleteOrganization({
-      organizationId: String(formData.get("organizationId") ?? ""),
-      confirmation: String(formData.get("confirmation") ?? ""),
-      acknowledge: formData.get("acknowledge") === "delete",
-    });
-
-    if ("incomplete" in result) {
-      return result;
-    }
-
-    redirect(`${ADMIN_ROUTES.clients}?notice=client-deleted`);
-  } catch (error) {
-    if (error instanceof AuthenticationError) {
-      throw error;
-    }
-
-    if (error instanceof Error && error.message === "NEXT_REDIRECT") {
-      throw error;
-    }
-
-    if (typeof error === "object" && error && "digest" in error) {
-      throw error;
-    }
-
-    if (error instanceof AuthorizationError) {
-      return { error: "Platform administrator access is required." };
-    }
-
-    if (error instanceof ValidationError || error instanceof NotFoundError || error instanceof AppError) {
-      return { error: error.message };
-    }
-
-    return { error: "The client could not be deleted." };
-  }
-}
-
 export async function retryOrganizationDeletion(jobId: string) {
   const admin = await requirePlatformAdmin();
   const parsedId = uuidSchema.safeParse(jobId);
@@ -636,33 +544,6 @@ export async function retryOrganizationDeletion(jobId: string) {
   }
 
   return { incomplete: result };
-}
-
-export async function retryOrganizationDeletionAction(formData: FormData) {
-  try {
-    const result = await retryOrganizationDeletion(String(formData.get("jobId") ?? ""));
-
-    if ("status" in result && result.status === "complete") {
-      redirect(`${ADMIN_ROUTES.clients}?notice=client-deleted`);
-    }
-
-    const detail =
-      "incomplete" in result && result.incomplete
-        ? result.incomplete.detail
-        : result.error ?? "Cleanup is still incomplete.";
-
-    redirect(`${ADMIN_ROUTES.clients}?notice=cleanup-incomplete&detail=${encodeURIComponent(detail)}`);
-  } catch (error) {
-    if (error instanceof AuthenticationError) {
-      throw error;
-    }
-
-    if (typeof error === "object" && error && "digest" in error) {
-      throw error;
-    }
-
-    redirect(`${ADMIN_ROUTES.clients}?notice=cleanup-incomplete`);
-  }
 }
 
 export async function listIncompleteDeletionJobs() {

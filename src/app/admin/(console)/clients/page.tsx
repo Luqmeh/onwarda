@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ADMIN_ROUTES, adminClientPath } from "@/config/admin";
-import { listIncompleteDeletionJobs, retryOrganizationDeletionAction } from "@/lib/admin/offboarding";
+import { retryOrganizationDeletionAction } from "@/lib/admin/offboarding-actions";
+import { listIncompleteDeletionJobs } from "@/lib/admin/offboarding";
 import { listAdminOrganizations } from "@/lib/admin/organizations";
 import { ORGANIZATION_STATUSES } from "@/types/enums";
 

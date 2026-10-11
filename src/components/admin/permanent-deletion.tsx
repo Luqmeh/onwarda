@@ -5,12 +5,12 @@ import { useActionState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  permanentlyDeleteOrganizationAction,
-  type DeletionActionState,
-  type DeletionCounts,
-  type OrganizationDeletionPreview,
-} from "@/lib/admin/offboarding";
+import { permanentlyDeleteOrganizationAction } from "@/lib/admin/offboarding-actions";
+import type {
+  DeletionActionState,
+  DeletionCounts,
+  OrganizationDeletionPreview,
+} from "@/lib/admin/offboarding-types";
 
 const initialState: DeletionActionState = {};
 

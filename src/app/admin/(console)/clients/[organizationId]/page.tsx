@@ -6,6 +6,7 @@ import { InviteUserForm } from "@/components/admin/invite-user-form";
 import { MemberActions } from "@/components/admin/member-actions";
 import { MetricCard } from "@/components/admin/metric-card";
 import { OrganizationStatusForm } from "@/components/admin/organization-status-form";
+import { PermanentDeletionWorkflow } from "@/components/admin/permanent-deletion";
 import { StatusBadge } from "@/components/admin/status-badge";
 import {
   EnterSupportForm,
@@ -20,6 +21,11 @@ import { getAppUrl } from "@/lib/url";
 import { OrganizationBrandingForm } from "@/components/admin/organization-branding-form";
 import { OrganizationSubscriptionForm } from "@/components/admin/subscription-form";
 import { getAdminOrganizationBranding } from "@/lib/admin/branding";
+import {
+  getOpenDeletionJob,
+  getOrganizationDeletionPreview,
+  retryOrganizationDeletionAction,
+} from "@/lib/admin/offboarding";
 import { getAdminOrganization } from "@/lib/admin/organizations";
 import {
   getOrganizationSubscription,
@@ -81,12 +87,15 @@ export default async function AdminClientDetailPage({
   }
 
   const query = await searchParams;
-  const [supportSession, subscription, subscriptionHistory, branding] = await Promise.all([
-    getActiveSupportSession(),
-    getOrganizationSubscription(parsedId.data),
-    getOrganizationSubscriptionHistory(parsedId.data),
-    getAdminOrganizationBranding(parsedId.data),
-  ]);
+  const [supportSession, subscription, subscriptionHistory, branding, deletionPreview, openDeletion] =
+    await Promise.all([
+      getActiveSupportSession(),
+      getOrganizationSubscription(parsedId.data),
+      getOrganizationSubscriptionHistory(parsedId.data),
+      getAdminOrganizationBranding(parsedId.data),
+      getOrganizationDeletionPreview(parsedId.data),
+      getOpenDeletionJob(parsedId.data),
+    ]);
   const accessUrl = clientAccessUrl(getAppUrl(), organization.slug);
   const created = query.created === "1";
   const invitationSent = query.invited === "1";
@@ -537,6 +546,38 @@ export default async function AdminClientDetailPage({
           <OrganizationStatusForm
             organizationId={organization.id}
             status={organization.status}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Permanent deletion</CardTitle>
+          <CardDescription>
+            Irreversible. This removes the organization, its tenant records, its stored files,
+            and Auth accounts that belong only to this client.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {openDeletion && !openDeletion.completed_at ? (
+            <form action={retryOrganizationDeletionAction} className="space-y-2">
+              <p className="text-sm" role="status">
+                A previous deletion did not finish. Storage{" "}
+                {openDeletion.storage_removed ? "is removed" : "is not removed"}. Database{" "}
+                {openDeletion.database_removed ? "is removed" : "is not removed"}. Exclusive
+                accounts {openDeletion.auth_removed ? "are removed" : "are not removed"}.
+              </p>
+              <input type="hidden" name="jobId" value={openDeletion.id} />
+              <Button type="submit" variant="destructive">
+                Retry unfinished cleanup
+              </Button>
+            </form>
+          ) : null}
+          <PermanentDeletionWorkflow
+            organizationId={organization.id}
+            organizationName={organization.name}
+            slug={organization.slug}
+            preview={deletionPreview}
           />
         </CardContent>
       </Card>

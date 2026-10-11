@@ -10,6 +10,7 @@ import { getServerEnv } from "@/config/env.server";
  * - Auth Admin invitation/lookup during provisioning (GoTrue has no user-scoped invite API)
  * - guest token hash lookup
  * - private signed URLs
+ * - platform-admin client deletion after requirePlatformAdmin()
  *
  * Organization inserts and status changes go through SECURITY DEFINER RPCs that
  * check is_active_platform_admin(). Do not insert tenant rows with this client.

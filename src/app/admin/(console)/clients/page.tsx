@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ADMIN_ROUTES, adminClientPath } from "@/config/admin";
+import { listIncompleteDeletionJobs, retryOrganizationDeletionAction } from "@/lib/admin/offboarding";
 import { listAdminOrganizations } from "@/lib/admin/organizations";
 import { ORGANIZATION_STATUSES } from "@/types/enums";
 
@@ -14,9 +15,10 @@ export const metadata = {
 export default async function AdminClientsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; status?: string; page?: string; notice?: string; detail?: string }>;
 }) {
   const params = await searchParams;
+  const incompleteJobs = await listIncompleteDeletionJobs();
   const page = Number.parseInt(params.page ?? "1", 10);
   const result = await listAdminOrganizations({
     query: params.q,
@@ -40,6 +42,44 @@ export default async function AdminClientsPage({
           <Link href={ADMIN_ROUTES.clientNew}>Create client</Link>
         </Button>
       </div>
+
+      {params.notice === "client-deleted" ? (
+        <p className="rounded-lg border bg-muted/40 px-3 py-2 text-sm" role="status">
+          The client and its tenant data were permanently deleted.
+        </p>
+      ) : null}
+      {params.notice === "cleanup-incomplete" ? (
+        <p className="rounded-lg border border-destructive/40 px-3 py-2 text-sm" role="alert">
+          Deletion cleanup is still incomplete.
+          {params.detail ? ` ${params.detail}` : ""}
+        </p>
+      ) : null}
+      {incompleteJobs.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Unfinished deletions</CardTitle>
+            <CardDescription>
+              These cleanups are still incomplete. They do not name the former client.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {incompleteJobs.map((job) => (
+              <form key={job.id} action={retryOrganizationDeletionAction} className="flex flex-wrap items-center justify-between gap-3 text-sm">
+                <p>
+                  Started {new Date(job.created_at).toLocaleString()}. Storage{" "}
+                  {job.storage_removed ? "removed" : "pending"}. Database{" "}
+                  {job.database_removed ? "removed" : "pending"}. Accounts{" "}
+                  {job.auth_removed ? "removed" : "pending"}.
+                </p>
+                <input type="hidden" name="jobId" value={job.id} />
+                <Button type="submit" variant="outline">
+                  Retry unfinished cleanup
+                </Button>
+              </form>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card>
         <CardHeader>

@@ -8,7 +8,10 @@ import {
   CLIENT_FORGOT_PASSWORD_PATH,
   RECOVERY_CODE_INVALID_MESSAGE,
   RECOVERY_REQUEST_MESSAGE,
+  PASSWORD_POLICY_MESSAGE,
   passwordChangeOutcome,
+  passwordRuleStatus,
+  passwordSubmissionReady,
   recoveryCodeInput,
   recoveryLoginPath,
   recoveryPasswordInput,
@@ -97,6 +100,27 @@ describe("password recovery codes", () => {
     expect(result.ok).toBe(false);
     expect(JSON.stringify(result)).not.toContain(CODE);
     expect(recoveryCodeInput("signup-token").ok).toBe(false);
+    expect(recoveryCodeInput(EMAIL).ok).toBe(false);
+    expect(recoveryCodeInput("000123")).toEqual({ ok: true, token: "000123" });
+    expect(recoveryCodeInput("12345").ok).toBe(false);
+    expect(recoveryCodeInput("12345678901").ok).toBe(false);
+  });
+
+  it("requires lowercase, uppercase, and a digit without treating a mismatch as a policy pass", () => {
+    expect(passwordRuleStatus("password12")).toMatchObject({ uppercase: false, lowercase: true, digit: true });
+    expect(passwordRuleStatus("PASSWORD12")).toMatchObject({ uppercase: true, lowercase: false, digit: true });
+    expect(passwordRuleStatus("Passwordab")).toMatchObject({ uppercase: true, lowercase: true, digit: false });
+    expect(passwordRuleStatus("Pass1").length).toBe(false);
+    expect(passwordSubmissionReady("Password12", "Password12")).toBe(true);
+    expect(passwordSubmissionReady("Password12", "Password13")).toBe(false);
+    expect(recoveryPasswordInput("password12", "password12")).toEqual({
+      ok: false,
+      message: PASSWORD_POLICY_MESSAGE,
+    });
+    expect(recoveryPasswordInput("Password12", "Password12")).toEqual({
+      ok: true,
+      password: "Password12",
+    });
   });
 
   it("rejects a password mismatch and a password-policy failure without echoing the password", () => {
@@ -145,6 +169,24 @@ describe("password recovery codes", () => {
       join(process.cwd(), "src/lib/auth/password-recovery.ts"),
       "utf8",
     );
+    const fields = readFileSync(
+      join(process.cwd(), "src/components/auth/new-password-fields.tsx"),
+      "utf8",
+    );
+    const emailStep = recovery.slice(recovery.indexOf('key="recovery-email"'));
+    const codeStep = recovery.slice(
+      recovery.indexOf('key="recovery-code"'),
+      recovery.indexOf('key="recovery-email"'),
+    );
+    const passwordStep = recovery.slice(
+      recovery.indexOf('key="recovery-password"'),
+      recovery.indexOf('key="recovery-code"'),
+    );
+    const reauthStep = change.slice(
+      change.indexOf('key="reauthentication-code"'),
+      change.indexOf('key="reauthentication-password"'),
+    );
+    const changePasswordStep = change.slice(change.indexOf('key="reauthentication-password"'));
 
     const invite = readFileSync(join(process.cwd(), "src/lib/auth/admin-invite.ts"), "utf8");
 
@@ -161,9 +203,39 @@ describe("password recovery codes", () => {
     expect(recovery).not.toContain("/onboarding");
     expect(recovery).not.toContain("/signup");
     expect(recovery).not.toContain("console.log");
+    expect(emailStep).toContain('type="email"');
+    expect(emailStep).toContain('name="email"');
+    expect(emailStep).toContain('autoComplete="email"');
+    expect(codeStep).toContain('name="recovery-code"');
+    expect(codeStep).toContain('type="text"');
+    expect(codeStep).toContain('autoComplete="one-time-code"');
+    expect(codeStep).toContain('inputMode="numeric"');
+    expect(codeStep).not.toContain('name="email"');
+    expect(codeStep).not.toContain('type="password"');
+    expect(passwordStep).not.toContain("recovery-code");
+    expect(passwordStep).not.toContain('name="email"');
+    expect(passwordStep).toContain("NewPasswordFields");
+    expect(reauthStep).toContain('name="reauthentication-code"');
+    expect(reauthStep).toContain('autoComplete="one-time-code"');
+    expect(reauthStep).toContain('type="text"');
+    expect(reauthStep).not.toContain('type="password"');
+    expect(changePasswordStep).not.toContain('name="reauthentication-code"');
+    expect(changePasswordStep).not.toContain('name="email"');
+    expect(fields).toContain('name="new-password"');
+    expect(fields).toContain('name="confirm-password"');
+    expect(fields).toContain('autoComplete="new-password"');
+    expect(fields).not.toContain('autoComplete="current-password"');
+    expect(fields).not.toContain('autoComplete="off"');
+    expect(fields).not.toContain("one-time-code");
+    expect(recovery).not.toContain('autoComplete="current-password"');
+    expect(recovery).not.toContain('autoComplete="off"');
+    expect(change).not.toContain('autoComplete="current-password"');
+    expect(change).not.toContain('autoComplete="off"');
     expect(change).toContain("reauthenticate");
     expect(change).toContain("nonce:");
+    expect(change).toContain("NewPasswordFields");
     expect(change.indexOf("authorizePasswordChange")).toBeLessThan(change.indexOf("updateUser"));
+    expect(change.indexOf("validateChosenPassword")).toBeLessThan(change.indexOf("updateUser"));
     expect(change).not.toContain("localStorage");
     expect(change).not.toContain("console.log");
     expect(proxy).toContain("ADMIN_ROUTES.forgotPassword");

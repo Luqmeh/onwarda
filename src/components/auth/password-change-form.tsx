@@ -2,20 +2,27 @@
 
 import { useState, type FormEvent } from "react";
 
+import { NewPasswordFields } from "@/components/auth/new-password-fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { authorizePasswordChange, type PasswordChangeAudience } from "@/lib/auth/password-change-actions";
+import { authorizePasswordChange, validateChosenPassword, type PasswordChangeAudience } from "@/lib/auth/password-change-actions";
 import {
   recoveryCodeInput,
   recoveryPasswordInput,
   passwordChangeOutcome,
+  passwordSubmissionReady,
   reauthenticateOutcome,
 } from "@/lib/auth/password-recovery";
 import { createSupabaseBrowserClient } from "@/lib/database/browser";
 
+type Step = "request" | "code" | "password";
+
 export function PasswordChangeForm({ audience }: { audience: PasswordChangeAudience }) {
-  const [codeSent, setCodeSent] = useState(false);
+  const [step, setStep] = useState<Step>("request");
+  const [reauthenticationCode, setReauthenticationCode] = useState<string | null>(null);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -41,20 +48,37 @@ export function PasswordChangeForm({ audience }: { audience: PasswordChangeAudie
     }
 
     setNotice(outcome.message);
-    setCodeSent(true);
+    setReauthenticationCode(null);
+    setStep("code");
   }
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+  function onCode(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const code = recoveryCodeInput(form.get("code"));
-    const password = recoveryPasswordInput(form.get("password"), form.get("confirmPassword"));
+    const code = recoveryCodeInput(form.get("reauthentication-code"));
     if (!code.ok) {
       setError(code.message);
       return;
     }
-    if (!password.ok) {
-      setError(password.message);
+
+    setError(null);
+    setPassword("");
+    setConfirmPassword("");
+    setReauthenticationCode(code.token);
+    setStep("password");
+  }
+
+  async function onPassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!reauthenticationCode) {
+      setStep("code");
+      setError("Enter the code from the email.");
+      return;
+    }
+
+    const parsed = recoveryPasswordInput(password, confirmPassword);
+    if (!parsed.ok) {
+      setError(parsed.message);
       return;
     }
 
@@ -67,14 +91,21 @@ export function PasswordChangeForm({ audience }: { audience: PasswordChangeAudie
       return;
     }
 
+    const policy = await validateChosenPassword(parsed.password, confirmPassword);
+    if (!policy.ok) {
+      setPending(false);
+      setError(policy.message);
+      return;
+    }
+
     const supabase = createSupabaseBrowserClient();
     const { error: updateError } = await supabase.auth.updateUser({
-      password: password.password,
-      nonce: code.token,
+      password: parsed.password,
+      nonce: reauthenticationCode,
     });
     const result = passwordChangeOutcome(updateError, {
-      password: password.password,
-      nonce: code.token,
+      password: parsed.password,
+      nonce: reauthenticationCode,
     });
     setPending(false);
     if (!result.ok) {
@@ -82,6 +113,9 @@ export function PasswordChangeForm({ audience }: { audience: PasswordChangeAudie
       return;
     }
 
+    setReauthenticationCode(null);
+    setPassword("");
+    setConfirmPassword("");
     setSaved(true);
     setNotice(result.message);
     setError(null);
@@ -102,58 +136,54 @@ export function PasswordChangeForm({ audience }: { audience: PasswordChangeAudie
           ? "We email a code to confirm this change. Your authenticator is still required for the admin console."
           : "We email a code to confirm this change before the new password is saved."}
       </p>
-      {notice && !codeSent ? null : notice ? (
+      {notice ? (
         <p className="text-sm" role="status">
           {notice}
         </p>
       ) : null}
-      {!codeSent ? (
+      {step === "request" ? (
         <Button type="button" onClick={() => void onRequest()} disabled={pending}>
           {pending ? "Sending code..." : "Email me a verification code"}
         </Button>
-      ) : (
-        <form onSubmit={onSubmit} className="space-y-4">
+      ) : null}
+      {step === "code" ? (
+        <form key="reauthentication-code" onSubmit={onCode} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="change-code">Verification code</Label>
+            <Label htmlFor="reauthentication-code">Verification code</Label>
             <Input
-              id="change-code"
-              name="code"
+              id="reauthentication-code"
+              name="reauthentication-code"
+              type="text"
               inputMode="numeric"
               autoComplete="one-time-code"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              pattern="[0-9]{6,10}"
               required
               minLength={6}
               maxLength={10}
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="change-password">New password</Label>
-            <Input
-              id="change-password"
-              name="password"
-              type="password"
-              autoComplete="new-password"
-              required
-              minLength={8}
-              maxLength={128}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="change-confirm">Confirm password</Label>
-            <Input
-              id="change-confirm"
-              name="confirmPassword"
-              type="password"
-              autoComplete="new-password"
-              required
-              minLength={8}
-              maxLength={128}
-            />
-          </div>
           <Button type="submit" disabled={pending}>
+            Continue
+          </Button>
+        </form>
+      ) : null}
+      {step === "password" ? (
+        <form key="reauthentication-password" onSubmit={onPassword} className="space-y-4">
+          <NewPasswordFields
+            idPrefix="change"
+            password={password}
+            confirmPassword={confirmPassword}
+            onPasswordChange={setPassword}
+            onConfirmChange={setConfirmPassword}
+          />
+          <Button type="submit" disabled={pending || !passwordSubmissionReady(password, confirmPassword)}>
             {pending ? "Saving password..." : "Change password"}
           </Button>
         </form>
-      )}
+      ) : null}
       {error ? (
         <p className="text-sm text-destructive" role="alert">
           {error}

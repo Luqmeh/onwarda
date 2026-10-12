@@ -9,7 +9,8 @@ vi.mock("@/lib/auth/session", () => ({
   requireUser: vi.fn(),
 }));
 
-import { authorizePasswordChange } from "@/lib/auth/password-change-actions";
+import { authorizePasswordChange, validateChosenPassword } from "@/lib/auth/password-change-actions";
+import { PASSWORD_POLICY_MESSAGE } from "@/lib/auth/password-recovery";
 import { requireUser } from "@/lib/auth/session";
 import {
   getPlatformAdminContext,
@@ -69,5 +70,22 @@ describe("signed-in password changes", () => {
       ok: false,
       message: "Sign in again before changing your password.",
     });
+  });
+
+  it("rejects a weak or mismatched password on the server without echoing it", async () => {
+    vi.mocked(requireUser).mockResolvedValue({ id: "client-user" } as never);
+    const weak = "password12";
+
+    await expect(validateChosenPassword(weak, weak)).resolves.toEqual({
+      ok: false,
+      message: PASSWORD_POLICY_MESSAGE,
+    });
+    await expect(validateChosenPassword("Password12", "Password13")).resolves.toEqual({
+      ok: false,
+      message: "Passwords do not match.",
+    });
+    await expect(validateChosenPassword("Password12", "Password12")).resolves.toEqual({ ok: true });
+    expect(JSON.stringify(await validateChosenPassword(weak, weak))).not.toContain(weak);
+    expect(requireActivePlatformAdminWithMfa).not.toHaveBeenCalled();
   });
 });

@@ -3,15 +3,18 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 
+import { NewPasswordFields } from "@/components/auth/new-password-fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { readAdminInviteIdentity } from "@/lib/auth/admin-invite-actions";
+import { validateChosenPassword } from "@/lib/auth/password-change-actions";
 import {
   RECOVERY_CODE_INVALID_MESSAGE,
   RECOVERY_REQUEST_MESSAGE,
   RECOVERY_RESEND_COOLDOWN_MS,
   type PasswordAudience,
+  passwordSubmissionReady,
   recoveryCodeInput,
   recoveryEmailInput,
   recoveryLoginPath,
@@ -31,6 +34,8 @@ export function PasswordRecoveryForm({ audience }: { audience: PasswordAudience 
   const [notice, setNotice] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [cooling, setCooling] = useState(false);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const cooldownTimer = useRef<number | null>(null);
   const loginPath = recoveryLoginPath(audience);
 
@@ -86,7 +91,7 @@ export function PasswordRecoveryForm({ audience }: { audience: PasswordAudience 
   async function onVerify(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const parsed = recoveryCodeInput(form.get("code"));
+    const parsed = recoveryCodeInput(form.get("recovery-code"));
     if (!parsed.ok) {
       setError(parsed.message);
       return;
@@ -116,13 +121,14 @@ export function PasswordRecoveryForm({ audience }: { audience: PasswordAudience 
 
     setPending(false);
     setNotice(null);
+    setPassword("");
+    setConfirmPassword("");
     setStep("password");
   }
 
   async function onPassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const parsed = recoveryPasswordInput(form.get("password"), form.get("confirmPassword"));
+    const parsed = recoveryPasswordInput(password, confirmPassword);
     if (!parsed.ok) {
       setError(parsed.message);
       return;
@@ -141,6 +147,13 @@ export function PasswordRecoveryForm({ audience }: { audience: PasswordAudience 
         setError("This recovery code cannot be used for a platform administrator account.");
         return;
       }
+    }
+
+    const policy = await validateChosenPassword(parsed.password, confirmPassword);
+    if (!policy.ok) {
+      setPending(false);
+      setError(policy.message);
+      return;
     }
 
     const { error: updateError } = await supabase.auth.updateUser({ password: parsed.password });
@@ -174,44 +187,28 @@ export function PasswordRecoveryForm({ audience }: { audience: PasswordAudience 
   }
 
   if (step === "password") {
+    const ready = passwordSubmissionReady(password, confirmPassword);
     return (
-      <form onSubmit={onPassword} className="space-y-5">
+      <form key="recovery-password" onSubmit={onPassword} className="space-y-5">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight">Choose a new password</h1>
           <p className="text-sm text-muted-foreground">
-            Use at least 8 characters. You will sign in again after this is saved.
+            You will sign in again after this is saved.
           </p>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">New password</Label>
-          <Input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="new-password"
-            required
-            minLength={8}
-            maxLength={128}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="confirmPassword">Confirm password</Label>
-          <Input
-            id="confirmPassword"
-            name="confirmPassword"
-            type="password"
-            autoComplete="new-password"
-            required
-            minLength={8}
-            maxLength={128}
-          />
-        </div>
+        <NewPasswordFields
+          idPrefix="recovery"
+          password={password}
+          confirmPassword={confirmPassword}
+          onPasswordChange={setPassword}
+          onConfirmChange={setConfirmPassword}
+        />
         {error ? (
           <p className="text-sm text-destructive" role="alert">
             {error}
           </p>
         ) : null}
-        <Button type="submit" className="w-full" disabled={pending}>
+        <Button type="submit" className="w-full" disabled={pending || !ready}>
           {pending ? "Saving password..." : "Save password"}
         </Button>
       </form>
@@ -220,7 +217,7 @@ export function PasswordRecoveryForm({ audience }: { audience: PasswordAudience 
 
   if (step === "code") {
     return (
-      <form onSubmit={onVerify} className="space-y-5">
+      <form key="recovery-code" onSubmit={onVerify} className="space-y-5">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight">Enter the code</h1>
           <p className="text-sm text-muted-foreground" role="status">
@@ -228,12 +225,17 @@ export function PasswordRecoveryForm({ audience }: { audience: PasswordAudience 
           </p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="code">Recovery code</Label>
+          <Label htmlFor="recovery-code">Recovery code</Label>
           <Input
-            id="code"
-            name="code"
+            id="recovery-code"
+            name="recovery-code"
+            type="text"
             inputMode="numeric"
             autoComplete="one-time-code"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            pattern="[0-9]{6,10}"
             required
             minLength={6}
             maxLength={10}
@@ -264,7 +266,7 @@ export function PasswordRecoveryForm({ audience }: { audience: PasswordAudience 
   }
 
   return (
-    <form onSubmit={onRequest} className="space-y-5">
+    <form key="recovery-email" onSubmit={onRequest} className="space-y-5">
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">Reset your password</h1>
         <p className="text-sm text-muted-foreground">

@@ -1,6 +1,5 @@
 import { ADMIN_ROUTES } from "@/config/admin";
 import { CLIENT_LOGIN } from "@/config/client";
-import { onboardingPasswordSchema } from "@/lib/validation/onboarding";
 import { emailSchema } from "@/lib/validation/common";
 
 export const CLIENT_FORGOT_PASSWORD_PATH = "/forgot-password";
@@ -19,6 +18,20 @@ export const RECOVERY_PASSWORD_FAILED_MESSAGE =
 export const RECOVERY_RESEND_COOLDOWN_MS = 60_000;
 
 const CODE_PATTERN = /^\d{6,10}$/;
+const PASSWORD_MIN_LENGTH = 8;
+const PASSWORD_MAX_LENGTH = 128;
+
+export const PASSWORD_POLICY_MESSAGE =
+  "Use 8 to 128 characters, including a lowercase letter, an uppercase letter, and a digit.";
+
+export const PASSWORD_RULES = [
+  { id: "length", label: "8 to 128 characters" },
+  { id: "lowercase", label: "One lowercase letter" },
+  { id: "uppercase", label: "One uppercase letter" },
+  { id: "digit", label: "One digit" },
+] as const;
+
+export type PasswordRuleId = (typeof PASSWORD_RULES)[number]["id"];
 
 export type PasswordAudience = "client" | "admin";
 
@@ -133,19 +146,40 @@ export async function verifyPasswordRecoveryCode(
   return { ok: true as const };
 }
 
+export function passwordRuleStatus(password: string): Record<PasswordRuleId, boolean> {
+  return {
+    length: password.length >= PASSWORD_MIN_LENGTH && password.length <= PASSWORD_MAX_LENGTH,
+    lowercase: /[a-z]/.test(password),
+    uppercase: /[A-Z]/.test(password),
+    digit: /[0-9]/.test(password),
+  };
+}
+
+export function passwordSubmissionReady(password: string, confirmPassword: string) {
+  const rules = passwordRuleStatus(password);
+  return (
+    rules.length &&
+    rules.lowercase &&
+    rules.uppercase &&
+    rules.digit &&
+    password === confirmPassword
+  );
+}
+
 export function recoveryPasswordInput(password: unknown, confirmPassword: unknown) {
-  const parsed = onboardingPasswordSchema.safeParse({ password, confirmPassword });
-  if (parsed.success) {
-    return { ok: true as const, password: parsed.data.password };
+  if (typeof password !== "string" || typeof confirmPassword !== "string") {
+    return { ok: false as const, message: PASSWORD_POLICY_MESSAGE };
   }
 
-  const mismatch = password !== confirmPassword;
-  return {
-    ok: false as const,
-    message: mismatch
-      ? "Passwords do not match."
-      : "Use at least 8 characters, and enter the same password twice.",
-  };
+  if (password !== confirmPassword) {
+    return { ok: false as const, message: "Passwords do not match." };
+  }
+
+  if (!passwordSubmissionReady(password, confirmPassword)) {
+    return { ok: false as const, message: PASSWORD_POLICY_MESSAGE };
+  }
+
+  return { ok: true as const, password };
 }
 
 export function recoveryPasswordOutcome(error: AuthErrorLike, password: string) {

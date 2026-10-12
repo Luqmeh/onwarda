@@ -1,6 +1,7 @@
 "use server";
 
 import { getPlatformAdminContext, requireActivePlatformAdminWithMfa } from "@/lib/authorization/platform-admin";
+import { recoveryPasswordInput } from "@/lib/auth/password-recovery";
 import { requireUser } from "@/lib/auth/session";
 import { AuthenticationError, AuthorizationError } from "@/lib/errors";
 
@@ -36,4 +37,26 @@ export async function authorizePasswordChange(
 
     throw error;
   }
+}
+
+export async function validateChosenPassword(
+  password: unknown,
+  confirmPassword: unknown,
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  try {
+    await requireUser();
+  } catch (error) {
+    if (error instanceof AuthenticationError) {
+      return { ok: false, message: "Sign in again before changing your password." };
+    }
+
+    throw error;
+  }
+
+  const parsed = recoveryPasswordInput(password, confirmPassword);
+  if (!parsed.ok) {
+    return { ok: false, message: parsed.message };
+  }
+
+  return { ok: true };
 }

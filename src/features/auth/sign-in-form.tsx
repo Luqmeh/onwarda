@@ -14,9 +14,10 @@ type SignInFormProps = {
   nextPath: string;
   title: string;
   description: string;
+  recoveryHref: string;
 };
 
-export function SignInForm({ nextPath, title, description }: SignInFormProps) {
+export function SignInForm({ nextPath, title, description, recoveryHref }: SignInFormProps) {
   const [state, formAction, pending] = useActionState(signInAction, initialState);
 
   return (
@@ -50,6 +51,12 @@ export function SignInForm({ nextPath, title, description }: SignInFormProps) {
           minLength={8}
         />
       </div>
+
+      <p className="text-right text-sm">
+        <Link href={recoveryHref} className="font-medium underline-offset-4 hover:underline">
+          Forgot password?
+        </Link>
+      </p>
 
       {state.error ? (
         <p className="text-sm text-destructive" role="alert">

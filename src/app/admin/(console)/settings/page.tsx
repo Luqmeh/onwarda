@@ -1,4 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PasswordChangeForm } from "@/components/auth/password-change-form";
 import { getPublicEnv } from "@/config/env";
 import { requireActivePlatformAdminWithMfa } from "@/lib/authorization/platform-admin";
 
@@ -59,6 +60,19 @@ export default async function AdminSettingsPage() {
             the user in the Supabase Authentication dashboard, then this account can enroll again
             after signing in.
           </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Security</CardTitle>
+          <CardDescription>
+            Change the password for this administrator. Email verification is in addition to
+            the authenticator already required for this page.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PasswordChangeForm audience="admin" />
         </CardContent>
       </Card>
 

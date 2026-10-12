@@ -1,4 +1,5 @@
 import { ClientPageHeader, ClientSectionCard } from "@/components/workspace/client-ui";
+import { PasswordChangeForm } from "@/components/auth/password-change-form";
 import { requireWorkspaceView } from "@/lib/tenancy/workspace-access";
 
 export const metadata = {
@@ -39,6 +40,12 @@ export default async function ClientAccountPage() {
             <dd className="mt-1 font-medium capitalize">{role}</dd>
           </div>
         </dl>
+      </ClientSectionCard>
+      <ClientSectionCard
+        title="Security"
+        description="Change the password for this signed-in account. This does not change organization access."
+      >
+        <PasswordChangeForm audience="client" />
       </ClientSectionCard>
     </div>
   );

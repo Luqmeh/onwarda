@@ -111,6 +111,48 @@ describe("admin proxy authentication", () => {
     expect(response.headers.get("location")).toBeNull();
   });
 
+  it("leaves /admin/forgot-password reachable before a session exists", async () => {
+    const passthrough = NextResponse.next();
+    vi.mocked(updateSession).mockResolvedValue({
+      response: passthrough,
+      user: null,
+    });
+
+    const response = await proxy(requestFor("/admin/forgot-password?code=recovery-code"));
+
+    expect(response).toBe(passthrough);
+    expect(response.headers.get("location")).toBeNull();
+  });
+
+  it("does not copy a recovery code from another admin route into the login redirect", async () => {
+    const passthrough = NextResponse.next();
+    vi.mocked(updateSession).mockResolvedValue({
+      response: passthrough,
+      user: null,
+    });
+
+    const response = await proxy(requestFor("/admin/settings?code=recovery-code"));
+    const location = response.headers.get("location") ?? "";
+
+    expect(response.status).toBe(307);
+    expect(location).not.toContain("recovery-code");
+  });
+
+  it("does not exempt a nested path under /admin/forgot-password", async () => {
+    const passthrough = NextResponse.next();
+    vi.mocked(updateSession).mockResolvedValue({
+      response: passthrough,
+      user: null,
+    });
+
+    const response = await proxy(requestFor("/admin/forgot-password/extra"));
+
+    expect(response.status).toBe(307);
+    expect(new URL(response.headers.get("location") ?? "", "http://localhost:3000").pathname).toBe(
+      "/admin/login",
+    );
+  });
+
   it("does not exempt a nested path under /admin/accept", async () => {
     const passthrough = NextResponse.next();
     vi.mocked(updateSession).mockResolvedValue({

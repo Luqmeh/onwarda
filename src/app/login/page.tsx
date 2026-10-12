@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { OnwardaWordmark } from "@/components/brand/onwarda-wordmark";
 import { ONWARDA_TAGLINE } from "@/config/brand";
 import { CLIENT_LOGIN, CLIENT_ROUTES } from "@/config/client";
+import { CLIENT_FORGOT_PASSWORD_PATH } from "@/lib/auth/password-recovery";
 import { SignInForm } from "@/features/auth/sign-in-form";
 import { getCurrentUser } from "@/lib/auth/session";
 import { safeInternalPath } from "@/lib/auth/safe-path";
@@ -89,6 +90,7 @@ export default async function ClientLoginPage({
           nextPath={nextPath}
           title="Welcome back"
           description="Sign in to your organization workspace."
+          recoveryHref={CLIENT_FORGOT_PASSWORD_PATH}
         />
       </div>
     </main>

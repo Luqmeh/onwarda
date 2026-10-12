@@ -1,6 +1,7 @@
 export const ADMIN_ROUTES = {
   root: "/admin",
   login: "/admin/login",
+  forgotPassword: "/admin/forgot-password",
   clients: "/admin/clients",
   clientNew: "/admin/clients/new",
   activity: "/admin/activity",

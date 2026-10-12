@@ -1,6 +1,7 @@
 import { SignInForm } from "@/features/auth/sign-in-form";
 import { ADMIN_ROUTES } from "@/config/admin";
 import { APP_NAME } from "@/config/app";
+import { ADMIN_FORGOT_PASSWORD_PATH } from "@/lib/auth/password-recovery";
 
 export const metadata = {
   title: "Admin sign in",
@@ -26,6 +27,7 @@ export default async function AdminLoginPage({
         nextPath={nextPath}
         title="Sign in"
         description="Platform administrators only. Client users cannot access this environment."
+        recoveryHref={ADMIN_FORGOT_PASSWORD_PATH}
       />
     </main>
   );

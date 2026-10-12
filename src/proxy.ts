@@ -23,8 +23,9 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isAdminLogin = pathname === `${ADMIN_PREFIX}/login`;
   const isAdminAccept = pathname === ADMIN_ROUTES.accept;
+  const isAdminForgotPassword = pathname === ADMIN_ROUTES.forgotPassword;
 
-  if (isAdminPath(pathname) && !isAdminLogin && !isAdminAccept && !user) {
+  if (isAdminPath(pathname) && !isAdminLogin && !isAdminAccept && !isAdminForgotPassword && !user) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = `${ADMIN_PREFIX}/login`;
     loginUrl.search = "";

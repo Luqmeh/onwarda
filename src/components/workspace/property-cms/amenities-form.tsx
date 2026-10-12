@@ -2,10 +2,10 @@
 
 import { useActionState, useMemo } from "react";
 
+import { useI18n } from "@/i18n/provider";
 import { Button } from "@/components/ui/button";
 import {
   PROPERTY_AMENITIES,
-  PROPERTY_AMENITY_LABELS,
 } from "@/lib/property-cms/catalog";
 import {
   updatePropertyAmenitiesAction,
@@ -21,6 +21,7 @@ export function PropertyAmenitiesForm({
   propertyId: string;
   selected: string[];
 }) {
+  const { messages } = useI18n();
   const action = useMemo(
     () => updatePropertyAmenitiesAction.bind(null, propertyId),
     [propertyId],
@@ -41,7 +42,7 @@ export function PropertyAmenitiesForm({
               value={amenity}
               defaultChecked={selected.includes(amenity)}
             />
-            {PROPERTY_AMENITY_LABELS[amenity]}
+            {amenity === "workspace" ? messages.catalog.amenityWorkspace : messages.catalog[amenity]}
           </label>
         ))}
       </div>
@@ -51,7 +52,7 @@ export function PropertyAmenitiesForm({
         </p>
       ) : null}
       <Button type="submit" disabled={pending}>
-        {pending ? "Saving..." : "Save amenities"}
+        {pending ? messages.actions.saving : messages.actions.saveAmenities}
       </Button>
     </form>
   );

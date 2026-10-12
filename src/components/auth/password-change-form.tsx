@@ -14,6 +14,7 @@ import {
   passwordSubmissionReady,
   reauthenticateOutcome,
 } from "@/lib/auth/password-recovery";
+import { useI18n } from "@/i18n/provider";
 import { createSupabaseBrowserClient } from "@/lib/database/browser";
 
 type Step = "request" | "code" | "password";
@@ -27,6 +28,7 @@ export function PasswordChangeForm({ audience }: { audience: PasswordChangeAudie
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const { messages } = useI18n();
 
   async function onRequest() {
     setPending(true);
@@ -132,9 +134,7 @@ export function PasswordChangeForm({ audience }: { audience: PasswordChangeAudie
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        {audience === "admin"
-          ? "We email a code to confirm this change. Your authenticator is still required for the admin console."
-          : "We email a code to confirm this change before the new password is saved."}
+        {audience === "admin" ? messages.auth.adminChangePasswordHelp : messages.auth.changePasswordHelp}
       </p>
       {notice ? (
         <p className="text-sm" role="status">
@@ -143,18 +143,19 @@ export function PasswordChangeForm({ audience }: { audience: PasswordChangeAudie
       ) : null}
       {step === "request" ? (
         <Button type="button" onClick={() => void onRequest()} disabled={pending}>
-          {pending ? "Sending code..." : "Email me a verification code"}
+          {pending ? messages.auth.sendingCode : messages.auth.emailVerificationCode}
         </Button>
       ) : null}
       {step === "code" ? (
         <form key="reauthentication-code" onSubmit={onCode} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="reauthentication-code">Verification code</Label>
+            <Label htmlFor="reauthentication-code">{messages.auth.verificationCode}</Label>
             <Input
               id="reauthentication-code"
               name="reauthentication-code"
               type="text"
               inputMode="numeric"
+              dir="ltr"
               autoComplete="one-time-code"
               autoCapitalize="none"
               autoCorrect="off"
@@ -166,7 +167,7 @@ export function PasswordChangeForm({ audience }: { audience: PasswordChangeAudie
             />
           </div>
           <Button type="submit" disabled={pending}>
-            Continue
+            {messages.auth.continue}
           </Button>
         </form>
       ) : null}
@@ -180,7 +181,7 @@ export function PasswordChangeForm({ audience }: { audience: PasswordChangeAudie
             onConfirmChange={setConfirmPassword}
           />
           <Button type="submit" disabled={pending || !passwordSubmissionReady(password, confirmPassword)}>
-            {pending ? "Saving password..." : "Change password"}
+            {pending ? messages.auth.savingPassword : messages.auth.changePasswordTitle}
           </Button>
         </form>
       ) : null}

@@ -2,6 +2,7 @@
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useI18n } from "@/i18n/provider";
 import { PASSWORD_RULES, passwordRuleStatus } from "@/lib/auth/password-recovery";
 
 export function NewPasswordFields({
@@ -17,7 +18,14 @@ export function NewPasswordFields({
   onPasswordChange: (value: string) => void;
   onConfirmChange: (value: string) => void;
 }) {
+  const { messages } = useI18n();
   const rules = passwordRuleStatus(password);
+  const ruleLabels = {
+    length: messages.passwordRules.length,
+    lowercase: messages.passwordRules.lowercase,
+    uppercase: messages.passwordRules.uppercase,
+    digit: messages.passwordRules.digit,
+  };
   const mismatch = confirmPassword.length > 0 && password !== confirmPassword;
   const passwordId = `${idPrefix}-new-password`;
   const confirmId = `${idPrefix}-confirm-password`;
@@ -25,7 +33,7 @@ export function NewPasswordFields({
   return (
     <>
       <div className="space-y-2">
-        <Label htmlFor={passwordId}>New password</Label>
+        <Label htmlFor={passwordId}>{messages.auth.newPassword}</Label>
         <Input
           id={passwordId}
           name="new-password"
@@ -41,13 +49,13 @@ export function NewPasswordFields({
         <ul id={`${passwordId}-rules`} aria-live="polite" className="space-y-1 text-sm">
           {PASSWORD_RULES.map((rule) => (
             <li key={rule.id} className={rules[rule.id] ? "text-foreground" : "text-muted-foreground"}>
-              {rules[rule.id] ? "Met" : "Needed"}: {rule.label}
+              {rules[rule.id] ? messages.passwordRules.met : messages.passwordRules.needed}: {ruleLabels[rule.id]}
             </li>
           ))}
         </ul>
       </div>
       <div className="space-y-2">
-        <Label htmlFor={confirmId}>Confirm password</Label>
+        <Label htmlFor={confirmId}>{messages.auth.confirmPassword}</Label>
         <Input
           id={confirmId}
           name="confirm-password"
@@ -62,7 +70,7 @@ export function NewPasswordFields({
         />
         {mismatch ? (
           <p className="text-sm text-destructive" role="alert">
-            Passwords do not match.
+            {messages.auth.passwordsDoNotMatch}
           </p>
         ) : null}
       </div>

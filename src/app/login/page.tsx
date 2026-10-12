@@ -6,6 +6,10 @@ import { Button } from "@/components/ui/button";
 import { OnwardaWordmark } from "@/components/brand/onwarda-wordmark";
 import { ONWARDA_TAGLINE } from "@/config/brand";
 import { CLIENT_LOGIN, CLIENT_ROUTES } from "@/config/client";
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
+import { LocaleFrame } from "@/components/i18n/locale-frame";
+import { getRequestI18n } from "@/i18n/get-locale";
+import { clientMetadata } from "@/i18n/page-title";
 import { CLIENT_FORGOT_PASSWORD_PATH } from "@/lib/auth/password-recovery";
 import { SignInForm } from "@/features/auth/sign-in-form";
 import { getCurrentUser } from "@/lib/auth/session";
@@ -14,10 +18,12 @@ import { readOnboardingGate } from "@/lib/onboarding/load";
 import { recordMarketingEvent } from "@/lib/marketing/events";
 import { getCurrentOrganization } from "@/lib/tenancy/context";
 
-export const metadata = {
-  title: "Log in",
-  description: "Sign in to your Onwarda workspace.",
-};
+export async function generateMetadata() {
+  return clientMetadata((messages) => ({
+    title: messages.titles.login,
+    description: messages.titles.loginDescription,
+  }));
+}
 
 export default async function ClientLoginPage({
   searchParams,
@@ -25,6 +31,7 @@ export default async function ClientLoginPage({
   searchParams: Promise<{ next?: string }>;
 }) {
   const params = await searchParams;
+  const { messages } = await getRequestI18n();
   const nextPath = safeInternalPath(params.next, CLIENT_ROUTES.root);
   const user = await getCurrentUser();
 
@@ -59,40 +66,47 @@ export default async function ClientLoginPage({
     }
 
     return (
+      <LocaleFrame>
       <main className="onwarda-client flex min-h-svh items-center justify-center px-6">
         <div className="w-full max-w-md rounded-[var(--onwarda-radius)] border bg-onwarda-white p-8 shadow-onwarda">
           <OnwardaWordmark className="mb-2 block" />
           <p className="onwarda-kicker mb-8">{ONWARDA_TAGLINE}</p>
-          <h1 className="text-2xl font-semibold tracking-tight">You are signed in</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{messages.auth.welcomeBack}</h1>
           <p className="mt-2 text-sm leading-relaxed text-onwarda-muted">
-            Signed in as {user.email ?? "your account"}. Continue to your workspace or
-            sign out to use a different client account.
+            {messages.auth.signedInAs.split("{email}")[0]}
+            <bdi dir="ltr">{user.email ?? messages.shell.unknownUser}</bdi>
+            {messages.auth.signedInAs.split("{email}")[1]}{" "}
+            {messages.auth.continueOrSignOut}
           </p>
           <div className="mt-6 flex flex-col gap-3">
             {membership ? (
               <Button asChild>
-                <Link href={CLIENT_ROUTES.root}>Open workspace</Link>
+                <Link href={CLIENT_ROUTES.root}>{messages.auth.openWorkspace}</Link>
               </Button>
             ) : null}
             <SignOutButton redirectTo={CLIENT_LOGIN} />
           </div>
         </div>
       </main>
+      </LocaleFrame>
     );
   }
 
   return (
+    <LocaleFrame>
     <main className="onwarda-client flex min-h-svh items-center justify-center px-6">
       <div className="w-full max-w-md rounded-[var(--onwarda-radius)] border bg-onwarda-white p-8 shadow-onwarda">
+        <div className="mb-6 flex justify-end"><LanguageSwitcher /></div>
         <OnwardaWordmark className="mb-2 block" />
         <p className="onwarda-kicker mb-8">{ONWARDA_TAGLINE}</p>
         <SignInForm
           nextPath={nextPath}
-          title="Welcome back"
-          description="Sign in to your organization workspace."
+          title={messages.auth.welcomeBack}
+          description={messages.auth.clientSignInDescription}
           recoveryHref={CLIENT_FORGOT_PASSWORD_PATH}
         />
       </div>
     </main>
+    </LocaleFrame>
   );
 }

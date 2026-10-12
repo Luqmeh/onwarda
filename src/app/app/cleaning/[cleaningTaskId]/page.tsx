@@ -20,10 +20,15 @@ import {
 import { cancelCleaningTaskAction, reopenCleaningTaskAction } from "@/lib/cleaning/actions";
 import { getCleaningTaskDetail } from "@/lib/cleaning/load";
 import { NotFoundError } from "@/lib/errors";
+import { getRequestI18n } from "@/i18n/get-locale";
+import { clientMetadata } from "@/i18n/page-title";
+import { fillMessage, formattingLocale } from "@/i18n/locale";
 import { requireWorkspaceView } from "@/lib/tenancy/workspace-access";
 import { formatDateTime } from "@/lib/workspace/format";
 
-export const metadata = { title: "Cleaning task" };
+export async function generateMetadata() {
+  return clientMetadata((messages) => ({ title: messages.titles.cleaningTask }));
+}
 
 export default async function CleaningTaskPage({
   params,
@@ -33,7 +38,11 @@ export default async function CleaningTaskPage({
   searchParams: Promise<{ notice?: string }>;
 }) {
   const { cleaningTaskId } = await params;
-  const view = await requireWorkspaceView();
+  const [{ locale, messages }, view] = await Promise.all([
+    getRequestI18n(),
+    requireWorkspaceView(),
+  ]);
+  const dates = formattingLocale(locale);
   const canAdminister =
     view.kind === "membership" && canAdministerCleaning(view.context.membership.role);
 
@@ -63,18 +72,18 @@ export default async function CleaningTaskPage({
   return (
     <div className="space-y-6">
       <ClientPageHeader
-        kicker="Turnover"
+        kicker={messages.screens.turnover}
         title={task.propertyName}
         description={
           task.triggerType === "manual"
-            ? "Manual cleaning."
+            ? messages.screens.manualCleaning
             : task.checkedOutAt
-              ? `Guest checked out ${formatDateTime(task.checkedOutAt)}.`
-              : "Guest checkout cleaning."
+              ? `${formatDateTime(task.checkedOutAt, dates)}`
+              : messages.screens.guestCheckoutCleaning
         }
         actions={
           <Button asChild variant="outline">
-            <Link href={CLIENT_ROUTES.cleaning}>All cleaning</Link>
+            <Link href={CLIENT_ROUTES.cleaning}>{messages.copy.viewAll}</Link>
           </Button>
         }
       />
@@ -83,7 +92,7 @@ export default async function CleaningTaskPage({
           Cleaning reopened. Previous completion stays in the history.
         </p>
       ) : null}
-      <ClientSectionCard title="Status">
+      <ClientSectionCard title={messages.fields.status}>
         <dl className="grid gap-4 text-sm sm:grid-cols-2">
           <div>
             <dt className="text-onwarda-muted">Task</dt>
@@ -116,7 +125,7 @@ export default async function CleaningTaskPage({
             <dt className="text-onwarda-muted">Assigned</dt>
             <dd className="mt-1 font-medium">
               {!task.assignee ? (
-                "Unassigned"
+                messages.screens.unassigned
               ) : task.assignee.active ? (
                 <Link href={cleaningAgentPath(task.assignee.id)} className="underline underline-offset-4">
                   {task.assignee.name}
@@ -131,12 +140,12 @@ export default async function CleaningTaskPage({
           </div>
           <div>
             <dt className="text-onwarda-muted">Started</dt>
-            <dd className="mt-1 font-medium">{task.startedAt ? formatDateTime(task.startedAt) : "Not started"}</dd>
+            <dd className="mt-1 font-medium">{task.startedAt ? formatDateTime(task.startedAt, dates) : messages.screens.notStarted}</dd>
           </div>
           <div>
             <dt className="text-onwarda-muted">Completed</dt>
             <dd className="mt-1 font-medium">
-              {task.completedAt ? formatDateTime(task.completedAt) : "Not completed"}
+              {task.completedAt ? formatDateTime(task.completedAt, dates) : messages.screens.notCompleted}
               {duration ? ` · ${duration} min` : ""}
             </dd>
           </div>
@@ -153,20 +162,25 @@ export default async function CleaningTaskPage({
           <ol className="mt-5 space-y-1 text-sm text-onwarda-muted">
             {task.history.map((entry) => (
               <li key={entry.id}>
-                <time dateTime={entry.createdAt}>{formatDateTime(entry.createdAt)}</time>
+                <time dateTime={entry.createdAt}>{formatDateTime(entry.createdAt, dates)}</time>
                 {" · "}
                 {entry.eventType === "cleaning.task_reassigned"
-                  ? `Reassigned from ${entry.previousAgentName ?? "Unassigned"} to ${entry.agentName ?? "Unassigned"}`
+                  ? fillMessage(messages.catalog.reassigned, {
+                      from: entry.previousAgentName ?? messages.screens.unassigned,
+                      to: entry.agentName ?? messages.screens.unassigned,
+                    })
                   : entry.eventType === "cleaning.task_unassigned"
-                    ? "Assignment removed"
+                    ? messages.screens.assignmentRemoved
                     : entry.eventType === "cleaning.task_assigned"
-                      ? `Assigned to ${entry.agentName ?? "a cleaner"}`
+                      ? fillMessage(messages.catalog.assignedTo, {
+                          name: entry.agentName ?? messages.screens.unassigned,
+                        })
                       : entry.eventType === "cleaning.completed"
-                        ? "Cleaning completed"
+                        ? messages.screens.cleaningCompleted
                         : entry.eventType === "cleaning.started"
-                          ? "Cleaning started"
+                          ? messages.screens.cleaningStarted
                           : entry.eventType === "cleaning.task_created"
-                            ? "Cleaning created"
+                            ? messages.screens.cleaningCreated
                             : entry.eventType}
               </li>
             ))}
@@ -177,23 +191,33 @@ export default async function CleaningTaskPage({
             {task.status === "completed" ? (
               <form action={reopenCleaningTaskAction.bind(null, task.id)}>
                 <Button type="submit" variant="outline">
-                  Reopen cleaning
+                  {messages.catalog.reopenCleaning}
                 </Button>
               </form>
             ) : null}
             {task.status === "queued" || task.status === "in_progress" ? (
               <form action={cancelCleaningTaskAction.bind(null, task.id)}>
                 <Button type="submit" variant="outline">
-                  Cancel task
+                  {messages.catalog.cancelTask}
                 </Button>
               </form>
             ) : null}
           </div>
         ) : null}
       </ClientSectionCard>
-      <ClientSectionCard title="Checklist">
+      <ClientSectionCard title={messages.screens.checklist}>
         {CLEANING_CHECKLIST_CATEGORIES.map((category) => {
           const items = task.items.filter((item) => item.category === category.key);
+          const categoryLabel =
+            category.key === "bedrooms"
+              ? messages.fields.bedrooms
+              : category.key === "bathrooms"
+                ? messages.fields.bathrooms
+                : category.key === "kitchen"
+                  ? messages.catalog.kitchen
+                  : category.key === "living"
+                    ? messages.catalog.living
+                    : messages.catalog.general;
 
           if (items.length === 0) {
             return null;
@@ -201,11 +225,14 @@ export default async function CleaningTaskPage({
 
           return (
             <div key={category.key} className="mb-4">
-              <h3 className="text-sm font-medium text-onwarda-muted">{category.label}</h3>
+              <h3 className="text-sm font-medium text-onwarda-muted">{categoryLabel}</h3>
               <ul className="mt-2 space-y-1 text-sm">
                 {items.map((item) => (
                   <li key={item.item_key}>
-                    {item.completed_at ? "☑" : "☐"} {item.label}
+                    {item.completed_at ? "☑" : "☐"}{" "}
+                    {Object.prototype.hasOwnProperty.call(messages.catalog, item.item_key)
+                      ? messages.catalog[item.item_key as keyof typeof messages.catalog]
+                      : item.label}
                   </li>
                 ))}
               </ul>

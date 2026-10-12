@@ -18,19 +18,23 @@ import {
 } from "@/config/client";
 import { resolveCalendarAnchor, resolveCalendarView, todayDateKey } from "@/lib/calendar/model";
 import { loadOnboardingSnapshot, readOnboardingGate } from "@/lib/onboarding/load";
+import { getRequestI18n } from "@/i18n/get-locale";
+import { clientMetadata } from "@/i18n/page-title";
+import { fillMessage, formattingLocale } from "@/i18n/locale";
 import { getWorkspaceDashboard } from "@/lib/workspace/data";
 import {
   formatDate,
   formatStay,
   guestDisplayName,
   humanizeToken,
+  labeledStatus,
   propertyLocation,
   statusTone,
 } from "@/lib/workspace/format";
 
-export const metadata = {
-  title: "Overview",
-};
+export async function generateMetadata() {
+  return clientMetadata((messages) => ({ title: messages.titles.overview }));
+}
 
 export default async function ClientOverviewPage({
   searchParams,
@@ -38,6 +42,9 @@ export default async function ClientOverviewPage({
   searchParams: Promise<{ notice?: string; view?: string; date?: string }>;
 }) {
   const query = await searchParams;
+  const { locale, messages } = await getRequestI18n();
+  const dates = formattingLocale(locale);
+  const statusLabels = messages.status;
   const dashboard = await getWorkspaceDashboard();
   const setup = await readOnboardingGate()
     .then(async (gate) => {
@@ -59,24 +66,27 @@ export default async function ClientOverviewPage({
   const attention = dashboard.openIssues.length + arrivingToday.length;
   const greetingHour = new Date().getHours();
   const greeting =
-    greetingHour < 12 ? "Good morning" : greetingHour < 18 ? "Good afternoon" : "Good evening";
+    greetingHour < 12
+      ? messages.overview.goodMorning
+      : greetingHour < 18
+        ? messages.overview.goodAfternoon
+        : messages.overview.goodEvening;
 
   return (
     <div className="space-y-8">
       <ClientPageHeader
         kicker={dashboard.organizationName}
         title={greeting}
-        description="Here's what's happening with your operation today."
+        description={messages.overview.today}
       />
       {query.notice === "payment-setup" ? (
         <p className="rounded-[var(--onwarda-radius)] border bg-onwarda-white px-4 py-3 text-sm" role="status">
-          Your organization is ready. The selected plan is pending. Payment setup is coming next — nothing has been
-          charged.
+          {messages.overview.paymentSetup}
         </p>
       ) : null}
       {setup.length > 0 ? (
         <section className="client-surface p-5 sm:p-6">
-          <h2 className="text-base font-medium">Complete your workspace</h2>
+          <h2 className="text-base font-medium">{messages.overview.completeWorkspace}</h2>
           <ul className="mt-3 space-y-1 text-sm text-onwarda-muted">
             {setup.map((item) => (
               <li key={item.label}>{item.label}</li>
@@ -90,35 +100,35 @@ export default async function ClientOverviewPage({
           view={calendarView}
           anchor={calendarAnchor}
           basePath={CLIENT_ROUTES.root}
-          title="Today at a glance"
+          title={messages.copy.todayAtAGlance}
           expandHref={CLIENT_ROUTES.calendar}
         />
       </Suspense>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <ClientMetricCard label="Arrivals today" value={arrivingToday.length} href={CLIENT_ROUTES.reservations} />
-        <ClientMetricCard label="Upcoming stays" value={dashboard.counts.upcomingReservations} href={CLIENT_ROUTES.reservations} />
-        <ClientMetricCard label="Open issues" value={dashboard.counts.openIssues} href={CLIENT_ROUTES.issues} />
-        <ClientMetricCard label="Guests" value={dashboard.counts.guests} href={CLIENT_ROUTES.guests} />
+        <ClientMetricCard label={messages.copy.arrivalsToday} value={arrivingToday.length} href={CLIENT_ROUTES.reservations} />
+        <ClientMetricCard label={messages.copy.upcomingStays} value={dashboard.counts.upcomingReservations} href={CLIENT_ROUTES.reservations} />
+        <ClientMetricCard label={messages.copy.openIssues} value={dashboard.counts.openIssues} href={CLIENT_ROUTES.issues} />
+        <ClientMetricCard label={messages.copy.guests} value={dashboard.counts.guests} href={CLIENT_ROUTES.guests} />
       </section>
 
-      <ClientSectionCard title={attention === 0 ? "You're all caught up" : "Needs attention"}>
+      <ClientSectionCard title={attention === 0 ? messages.copy.caughtUp : messages.copy.needsAttention}>
         {attention === 0 ? (
           <p className="text-sm text-onwarda-muted">
-            No active tasks need your attention.
+            {messages.copy.noTasks}
             {nextArrival ? (
               <>
-                {" Next up: "}
+                {" "}
+                {messages.copy.nextUp}{" "}
                 <Link
                   href={clientReservationPath(nextArrival.id)}
                   className="font-medium underline underline-offset-4"
                 >
-                  {guestDisplayName(nextArrival.guestName)}
+                  <bdi>{guestDisplayName(nextArrival.guestName, messages.guestFallback)}</bdi>
                 </Link>
-                {` at ${nextArrival.propertyName ?? "a property"} · ${formatStay(
-                  nextArrival.checkIn,
-                  nextArrival.checkOut,
-                )}.`}
+                {` · `}
+                <bdi>{nextArrival.propertyName ?? messages.copy.aProperty}</bdi>
+                {` · ${formatStay(nextArrival.checkIn, nextArrival.checkOut, dates)}.`}
               </>
             ) : null}
           </p>
@@ -127,9 +137,9 @@ export default async function ClientOverviewPage({
             {arrivingToday.map((reservation) => (
               <li key={reservation.id}>
                 <Link href={clientReservationPath(reservation.id)} className="font-medium underline underline-offset-4">
-                  {guestDisplayName(reservation.guestName)} arrives today
+                  <bdi>{guestDisplayName(reservation.guestName, messages.guestFallback)}</bdi> {messages.copy.arrivesToday}
                 </Link>
-                <span className="text-onwarda-muted"> · {reservation.propertyName ?? "Property"}</span>
+                <span className="text-onwarda-muted"> · <bdi>{reservation.propertyName ?? messages.copy.property}</bdi></span>
               </li>
             ))}
             {dashboard.openIssues.slice(0, 3).map((issue) => (
@@ -137,7 +147,7 @@ export default async function ClientOverviewPage({
                 <Link href={CLIENT_ROUTES.issues} className="font-medium capitalize underline underline-offset-4">
                   {humanizeToken(issue.category)}
                 </Link>
-                <span className="text-onwarda-muted"> · {issue.propertyName ?? "Workspace"}</span>
+                <span className="text-onwarda-muted"> · <bdi>{issue.propertyName ?? messages.copy.workspace}</bdi></span>
               </li>
             ))}
           </ul>
@@ -146,18 +156,18 @@ export default async function ClientOverviewPage({
 
       <div className="grid gap-6 xl:grid-cols-2">
         <ClientSectionCard
-          title="Properties"
-          description="Homes and rooms in this organization."
+          title={messages.copy.properties}
+          description={messages.copy.homesAndRooms}
           action={
             <Link href={CLIENT_ROUTES.properties} className="text-sm text-onwarda-olive hover:underline">
-              View all
+              {messages.copy.viewAll}
             </Link>
           }
         >
           {dashboard.properties.length === 0 ? (
             <ClientEmptyState
-              title="Your properties will appear here."
-              description="When you add a home, it becomes the place guests arrive, rest, and leave a little lighter."
+              title={messages.copy.propertiesEmptyTitle}
+              description={messages.copy.propertiesEmptyBody}
             />
           ) : (
             <ul className="divide-y">
@@ -170,10 +180,10 @@ export default async function ClientOverviewPage({
                     <div>
                       <p className="font-medium">{property.name}</p>
                       <p className="text-sm text-onwarda-muted">
-                        {propertyLocation(property) ?? "Location not set"}
+                        <bdi>{propertyLocation(property) ?? messages.copy.locationNotSet}</bdi>
                       </p>
                     </div>
-                    <ClientStatusBadge label={property.status} tone={statusTone(property.status)} />
+                    <ClientStatusBadge label={labeledStatus(property.status, statusLabels)} tone={statusTone(property.status)} />
                   </Link>
                 </li>
               ))}
@@ -182,18 +192,18 @@ export default async function ClientOverviewPage({
         </ClientSectionCard>
 
         <ClientSectionCard
-          title="Upcoming reservations"
-          description="Arrivals still ahead."
+          title={messages.copy.upcomingReservations}
+          description={messages.copy.arrivalsAhead}
           action={
             <Link href={CLIENT_ROUTES.reservations} className="text-sm text-onwarda-olive hover:underline">
-              View all
+              {messages.copy.viewAll}
             </Link>
           }
         >
           {dashboard.upcomingReservations.length === 0 ? (
             <ClientEmptyState
-              title="Your upcoming reservations will appear here."
-              description="Quiet for now — new stays will land here as soon as they are added."
+              title={messages.copy.reservationsEmptyTitle}
+              description={messages.copy.reservationsEmptyBody}
             />
           ) : (
             <ul className="divide-y">
@@ -204,12 +214,12 @@ export default async function ClientOverviewPage({
                     className="flex flex-col gap-1 py-3 hover:text-onwarda-olive sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div>
-                      <p className="font-medium">{guestDisplayName(reservation.guestName)}</p>
+                      <p className="font-medium"><bdi>{guestDisplayName(reservation.guestName, messages.guestFallback)}</bdi></p>
                       <p className="text-sm text-onwarda-muted">
-                        {reservation.propertyName ?? "Property"} · {formatStay(reservation.checkIn, reservation.checkOut)}
+                        <bdi>{reservation.propertyName ?? messages.copy.property}</bdi> · {formatStay(reservation.checkIn, reservation.checkOut, dates)}
                       </p>
                     </div>
-                    <ClientStatusBadge label={reservation.status} tone={statusTone(reservation.status)} />
+                    <ClientStatusBadge label={labeledStatus(reservation.status, statusLabels)} tone={statusTone(reservation.status)} />
                   </Link>
                 </li>
               ))}
@@ -218,18 +228,18 @@ export default async function ClientOverviewPage({
         </ClientSectionCard>
 
         <ClientSectionCard
-          title="Guests"
-          description="People staying with this organization."
+          title={messages.copy.guests}
+          description={messages.copy.guestsBody}
           action={
             <Link href={CLIENT_ROUTES.guests} className="text-sm text-onwarda-olive hover:underline">
-              View all
+              {messages.copy.viewAll}
             </Link>
           }
         >
           {dashboard.guests.length === 0 ? (
             <ClientEmptyState
-              title="Guests will appear here."
-              description="Names stay with this organization only."
+              title={messages.copy.guestsEmptyTitle}
+              description={messages.copy.guestsEmptyBody}
             />
           ) : (
             <ul className="divide-y">
@@ -241,14 +251,14 @@ export default async function ClientOverviewPage({
                   >
                     <div>
                       <p className="font-medium">
-                        {guestDisplayName({
+                        <bdi>{guestDisplayName({
                           first_name: guest.firstName,
                           last_name: guest.lastName,
-                        })}
+                        }, messages.guestFallback)}</bdi>
                       </p>
-                      <p className="text-sm text-onwarda-muted">{guest.email ?? "No email on file"}</p>
+                      <p className="text-sm text-onwarda-muted" dir="ltr">{guest.email ?? messages.copy.noEmail}</p>
                     </div>
-                    <p className="text-sm text-onwarda-muted">{guest.stayCount} stays</p>
+                    <p className="text-sm text-onwarda-muted">{fillMessage(messages.copy.staysCount, { count: guest.stayCount })}</p>
                   </Link>
                 </li>
               ))}
@@ -257,18 +267,18 @@ export default async function ClientOverviewPage({
         </ClientSectionCard>
 
         <ClientSectionCard
-          title="Open issues"
-          description="Operational items that still need attention."
+          title={messages.copy.openIssues}
+          description={messages.copy.openIssuesBody}
           action={
             <Link href={CLIENT_ROUTES.issues} className="text-sm text-onwarda-olive hover:underline">
-              View all
+              {messages.copy.viewAll}
             </Link>
           }
         >
           {dashboard.openIssues.length === 0 ? (
             <ClientEmptyState
-              title="Everything is quiet."
-              description="No open issues in this workspace. That is a good place to be."
+              title={messages.copy.issuesEmptyTitle}
+              description={messages.copy.issuesEmptyBody}
             />
           ) : (
             <ul className="divide-y">
@@ -281,7 +291,7 @@ export default async function ClientOverviewPage({
                     <div>
                       <p className="font-medium capitalize">{humanizeToken(issue.category)}</p>
                       <p className="line-clamp-1 text-sm text-onwarda-muted">
-                        {issue.propertyName ?? "Workspace"} · {issue.description}
+                        <bdi>{issue.propertyName ?? messages.copy.workspace}</bdi> · <bdi>{issue.description}</bdi>
                       </p>
                     </div>
                     <ClientStatusBadge label={issue.priority} tone={statusTone(issue.priority)} />
@@ -293,13 +303,13 @@ export default async function ClientOverviewPage({
         </ClientSectionCard>
 
         <ClientSectionCard
-          title="Recent activity"
-          description="What has happened in this organization."
+          title={messages.copy.recentActivity}
+          description={messages.copy.recentActivityBody}
         >
           {dashboard.activity.length === 0 ? (
             <ClientEmptyState
-              title="Everything is quiet."
-              description="Activity from stays, access, and guest moments will gather here."
+              title={messages.screens.quiet}
+              description={messages.copy.activityEmptyBody}
             />
           ) : (
             <ul className="divide-y">
@@ -307,7 +317,7 @@ export default async function ClientOverviewPage({
                 <li key={entry.id} className="flex items-center justify-between gap-3 py-3">
                   <p className="text-sm capitalize">{humanizeToken(entry.eventType)}</p>
                   <time className="text-xs text-onwarda-muted" dateTime={entry.createdAt}>
-                    {formatDate(entry.createdAt)}
+                    {formatDate(entry.createdAt, dates)}
                   </time>
                 </li>
               ))}

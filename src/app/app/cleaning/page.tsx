@@ -10,32 +10,38 @@ import {
   ClientStatusBadge,
 } from "@/components/workspace/client-ui";
 import { CLIENT_ROUTES, cleaningTaskPath } from "@/config/client";
-import {
-  CLEANING_TASK_STATUS_LABELS,
-  CLEANING_TRIGGER_LABELS,
-  PROPERTY_READINESS_LABELS,
-  type CleaningTaskStatus,
-  type PropertyReadiness,
-} from "@/lib/cleaning/catalog";
 import { getCleaningDashboard, type CleaningDashboardTask } from "@/lib/cleaning/load";
+import { getRequestI18n } from "@/i18n/get-locale";
+import { clientMetadata } from "@/i18n/page-title";
+import { formattingLocale } from "@/i18n/locale";
 import { formatDateTime } from "@/lib/workspace/format";
 
-export const metadata = { title: "Cleaning" };
+export async function generateMetadata() {
+  return clientMetadata((messages) => ({ title: messages.titles.cleaning }));
+}
 
-function assigneeLabel(task: CleaningDashboardTask) {
+function assigneeLabel(task: CleaningDashboardTask, unassigned: string, unavailable: string) {
   if (task.unassigned || !task.assigneeName) {
-    return "Unassigned";
+    return unassigned;
   }
 
   if (task.assigneeUnavailable) {
-    return `${task.assigneeName} · unavailable`;
+    return `${task.assigneeName} · ${unavailable}`;
   }
 
   return task.assigneeName;
 }
 
-function sourceLabel(triggerType: string) {
-  return CLEANING_TRIGGER_LABELS[triggerType as keyof typeof CLEANING_TRIGGER_LABELS] ?? triggerType;
+function sourceLabel(triggerType: string, manual: string, checkout: string) {
+  if (triggerType === "manual") {
+    return manual;
+  }
+
+  if (triggerType === "guest_checkout") {
+    return checkout;
+  }
+
+  return triggerType;
 }
 
 export default async function CleaningDashboardPage({
@@ -44,7 +50,11 @@ export default async function CleaningDashboardPage({
   searchParams: Promise<{ source?: string }>;
 }) {
   const query = await searchParams;
-  const dashboard = await getCleaningDashboard();
+  const [{ locale, messages }, dashboard] = await Promise.all([
+    getRequestI18n(),
+    getCleaningDashboard(),
+  ]);
+  const dates = formattingLocale(locale);
   const source =
     query.source === "manual" || query.source === "guest_checkout" ? query.source : "all";
   const matches = (task: CleaningDashboardTask) => source === "all" || task.triggerType === source;
@@ -55,9 +65,9 @@ export default async function CleaningDashboardPage({
   return (
     <div className="space-y-6">
       <ClientPageHeader
-        kicker="Turnover"
-        title="Cleaning"
-        description="Create a cleaning now, or let guest checkout open one. The property stays on hold until the task is finished."
+        kicker={messages.screens.turnover}
+        title={messages.nav.cleaning}
+        description={messages.screens.cleaningIntro}
         actions={
           <Button asChild variant="outline">
             <Link href={CLIENT_ROUTES.cleaningAgents}>Cleaning team</Link>
@@ -66,7 +76,7 @@ export default async function CleaningDashboardPage({
       />
 
       {dashboard.canManage ? (
-        <ClientSectionCard title="Create cleaning" description="Starts a queued task for one property.">
+        <ClientSectionCard title={messages.screens.createCleaning} description={messages.screens.createCleaningHelp}>
           <CreateCleaningForm
             requestKey={randomUUID()}
             properties={dashboard.teams.map((team) => ({
@@ -79,12 +89,12 @@ export default async function CleaningDashboardPage({
         </ClientSectionCard>
       ) : null}
 
-      <nav aria-label="Cleaning source" className="flex flex-wrap gap-2 text-sm">
+      <nav aria-label={messages.catalog.cleaningSource} className="flex flex-wrap gap-2 text-sm">
         {(
           [
-            ["all", "All"],
-            ["guest_checkout", "Guest checkout"],
-            ["manual", "Manual"],
+            ["all", messages.catalog.allSources],
+            ["guest_checkout", messages.catalog.guest_checkout],
+            ["manual", messages.catalog.manual],
           ] as const
         ).map(([value, label]) => (
           <Link
@@ -103,15 +113,15 @@ export default async function CleaningDashboardPage({
       </nav>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <ClientMetricCard label="Cleaning required" value={dashboard.summary.required} />
-        <ClientMetricCard label="In progress" value={dashboard.summary.inProgress} />
-        <ClientMetricCard label="Completed today" value={dashboard.summary.completedToday} />
-        <ClientMetricCard label="Unassigned" value={dashboard.summary.unassigned} />
+        <ClientMetricCard label={messages.screens.cleaningRequired} value={dashboard.summary.required} />
+        <ClientMetricCard label={messages.screens.inProgress} value={dashboard.summary.inProgress} />
+        <ClientMetricCard label={messages.screens.completedToday} value={dashboard.summary.completedToday} />
+        <ClientMetricCard label={messages.screens.unassigned} value={dashboard.summary.unassigned} />
       </section>
 
-      <ClientSectionCard title="Needs cleaning">
+      <ClientSectionCard title={messages.screens.needsCleaning}>
         {waiting.length === 0 ? (
-          <p className="text-sm text-onwarda-muted">Nothing is waiting for a cleaner.</p>
+          <p className="text-sm text-onwarda-muted">{messages.screens.waitingEmpty}</p>
         ) : (
           <ul className="space-y-3">
             {waiting.map((task) => (
@@ -120,23 +130,33 @@ export default async function CleaningDashboardPage({
                   <div>
                     <p className="font-medium">{task.propertyName}</p>
                     <p className="text-sm text-onwarda-muted">
-                      {PROPERTY_READINESS_LABELS[task.readiness as PropertyReadiness] ?? task.readiness}
+                      {messages.catalog[task.readiness as keyof typeof messages.catalog] ?? task.readiness}
                       {" · "}
-                      {sourceLabel(task.triggerType)}
-                      {task.checkedOutAt ? ` · Guest checked out ${formatDateTime(task.checkedOutAt)}` : ""}
+                      {sourceLabel(task.triggerType, messages.catalog.manual, messages.catalog.guest_checkout)}
+                      {task.checkedOutAt ? ` · ${formatDateTime(task.checkedOutAt, dates)}` : ""}
                     </p>
                     <p className="mt-1 text-sm">
-                      {assigneeLabel(task)} · {task.completedCount} / {task.totalCount}
+                      {assigneeLabel(task, messages.screens.unassigned, messages.screens.unavailable)} · {task.completedCount} / {task.totalCount}
                     </p>
                   </div>
                   <div className="space-y-2 text-right">
                     <ClientStatusBadge
-                      label={CLEANING_TASK_STATUS_LABELS[task.status as CleaningTaskStatus] ?? task.status}
+                      label={
+                        task.status === "queued"
+                          ? messages.catalog.queued
+                          : task.status === "in_progress"
+                            ? messages.status.in_progress
+                            : task.status === "completed"
+                              ? messages.status.completed
+                              : task.status === "cancelled"
+                                ? messages.status.cancelled
+                                : task.status
+                      }
                       tone="neutral"
                     />
                     <div>
                       <Link href={cleaningTaskPath(task.id)} className="text-sm font-medium underline underline-offset-4">
-                        Open
+                        {messages.screens.openTask}
                       </Link>
                     </div>
                   </div>
@@ -147,9 +167,9 @@ export default async function CleaningDashboardPage({
         )}
       </ClientSectionCard>
 
-      <ClientSectionCard title="In progress">
+      <ClientSectionCard title={messages.screens.inProgress}>
         {underway.length === 0 ? (
-          <p className="text-sm text-onwarda-muted">No cleaning is underway.</p>
+          <p className="text-sm text-onwarda-muted">{messages.screens.noCleaningUnderway}</p>
         ) : (
           <ul className="space-y-3">
             {underway.map((task) => (
@@ -158,13 +178,13 @@ export default async function CleaningDashboardPage({
                   <div>
                     <p className="font-medium">{task.propertyName}</p>
                     <p className="mt-1 text-sm">
-                      {PROPERTY_READINESS_LABELS[task.readiness as PropertyReadiness] ?? "Cleaning in progress"}
+                      {messages.catalog.cleaningInProgress}
                       {" · "}
-                      {assigneeLabel(task)} · {task.completedCount} / {task.totalCount}
+                      {assigneeLabel(task, messages.screens.unassigned, messages.screens.unavailable)} · {task.completedCount} / {task.totalCount}
                     </p>
                   </div>
                   <Link href={cleaningTaskPath(task.id)} className="text-sm font-medium underline underline-offset-4">
-                    Open
+                    {messages.screens.openTask}
                   </Link>
                 </div>
               </li>
@@ -173,9 +193,9 @@ export default async function CleaningDashboardPage({
         )}
       </ClientSectionCard>
 
-      <ClientSectionCard title="Completed today">
+      <ClientSectionCard title={messages.screens.completedToday}>
         {completed.length === 0 ? (
-          <p className="text-sm text-onwarda-muted">Nothing has been completed today.</p>
+          <p className="text-sm text-onwarda-muted">{messages.screens.completedEmpty}</p>
         ) : (
           <ul className="space-y-2 text-sm">
             {completed.map((task) => (
@@ -183,9 +203,9 @@ export default async function CleaningDashboardPage({
                 <Link href={cleaningTaskPath(task.id)} className="font-medium underline underline-offset-4">
                   {task.propertyName}
                 </Link>
-                {` · ${sourceLabel(task.triggerType)}`}
-                {task.completedAt ? ` · ${formatDateTime(task.completedAt)}` : null}
-                {` · ${assigneeLabel(task)}`}
+                {` · ${sourceLabel(task.triggerType, messages.catalog.manual, messages.catalog.guest_checkout)}`}
+                {task.completedAt ? ` · ${formatDateTime(task.completedAt, dates)}` : null}
+                {` · ${assigneeLabel(task, messages.screens.unassigned, messages.screens.unavailable)}`}
               </li>
             ))}
           </ul>
@@ -193,8 +213,8 @@ export default async function CleaningDashboardPage({
       </ClientSectionCard>
 
       <ClientSectionCard
-        title="Default cleaners"
-        description="Who normally handles each property. Changing this does not move an open task."
+        title={messages.screens.defaultCleaners}
+        description={messages.screens.defaultCleanersHelp}
       >
         {dashboard.teams.length === 0 ? (
           <p className="text-sm text-onwarda-muted">Properties will appear here once you add one.</p>
@@ -204,7 +224,7 @@ export default async function CleaningDashboardPage({
               <li key={team.propertyId} className="rounded-[var(--onwarda-radius)] border px-4 py-3">
                 <p className="font-medium">{team.propertyName}</p>
                 <p className="text-sm text-onwarda-muted">
-                  {PROPERTY_READINESS_LABELS[team.readiness as PropertyReadiness] ?? team.readiness}
+                  {messages.catalog[team.readiness as keyof typeof messages.catalog] ?? team.readiness}
                 </p>
                 <div className="mt-3">
                   {dashboard.canManage ? (

@@ -16,6 +16,9 @@ import {
   clientReservationPath,
 } from "@/config/client";
 import { NotFoundError } from "@/lib/errors";
+import { getRequestI18n } from "@/i18n/get-locale";
+import { clientMetadata } from "@/i18n/page-title";
+import { formattingLocale } from "@/i18n/locale";
 import { requireWorkspaceView } from "@/lib/tenancy/workspace-access";
 import { getWorkspaceGuest } from "@/lib/workspace/data";
 import {
@@ -25,9 +28,9 @@ import {
   statusTone,
 } from "@/lib/workspace/format";
 
-export const metadata = {
-  title: "Guest",
-};
+export async function generateMetadata() {
+  return clientMetadata((messages) => ({ title: messages.titles.guest }));
+}
 
 export default async function ClientGuestDetailPage({
   params,
@@ -35,7 +38,11 @@ export default async function ClientGuestDetailPage({
   params: Promise<{ guestId: string }>;
 }) {
   const { guestId } = await params;
-  const view = await requireWorkspaceView();
+  const [{ locale, messages }, view] = await Promise.all([
+    getRequestI18n(),
+    requireWorkspaceView(),
+  ]);
+  const dates = formattingLocale(locale);
 
   let guest;
 
@@ -63,39 +70,39 @@ export default async function ClientGuestDetailPage({
   return (
     <div className="space-y-6">
       <ClientPageHeader
-        kicker="People"
+        kicker={messages.screens.people}
         title={name}
-        description="This guest belongs to the current organization only."
+        description={messages.screens.guestBelongs}
         actions={
           <div className="flex flex-wrap gap-2">
             {canEdit ? (
               <Button asChild>
-                <Link href={clientReservationCreatePath()}>Create reservation</Link>
+                <Link href={clientReservationCreatePath()}>{messages.actions.createReservation}</Link>
               </Button>
             ) : null}
             <Button asChild variant="outline">
-              <Link href={CLIENT_ROUTES.guests}>All guests</Link>
+              <Link href={CLIENT_ROUTES.guests}>{messages.actions.allGuests}</Link>
             </Button>
           </div>
         }
       />
 
-      <ClientSectionCard title="Guest">
+      <ClientSectionCard title={messages.fields.guest}>
         <dl className="grid gap-4 text-sm sm:grid-cols-2">
           <div>
-            <dt className="text-onwarda-muted">Name</dt>
+            <dt className="text-onwarda-muted">{messages.actions.name}</dt>
             <dd className="mt-1 font-medium">{name}</dd>
           </div>
           <div>
-            <dt className="text-onwarda-muted">Email</dt>
+            <dt className="text-onwarda-muted">{messages.auth.email}</dt>
             <dd className="mt-1 font-medium">{guest.email ?? "—"}</dd>
           </div>
           <div>
-            <dt className="text-onwarda-muted">Phone</dt>
+            <dt className="text-onwarda-muted">{messages.actions.phone}</dt>
             <dd className="mt-1 font-medium">{guest.phone ?? "—"}</dd>
           </div>
           <div>
-            <dt className="text-onwarda-muted">Reservations</dt>
+            <dt className="text-onwarda-muted">{messages.actions.reservations}</dt>
             <dd className="mt-1 font-medium">{guest.reservationCount}</dd>
           </div>
         </dl>
@@ -103,8 +110,8 @@ export default async function ClientGuestDetailPage({
 
       {canEdit ? (
         <ClientSectionCard
-          title="Edit guest"
-          description="Contact details stay inside this organization."
+          title={messages.screens.editGuest}
+          description={messages.screens.editGuestHelp}
         >
           <EditGuestForm
             guestId={guest.id}
@@ -116,7 +123,7 @@ export default async function ClientGuestDetailPage({
         </ClientSectionCard>
       ) : null}
 
-      <ClientSectionCard title="Current and upcoming stays">
+      <ClientSectionCard title={messages.screens.currentStays}>
         {upcoming.length === 0 ? (
           <p className="text-sm text-onwarda-muted">No current or upcoming stays.</p>
         ) : (
@@ -130,7 +137,7 @@ export default async function ClientGuestDetailPage({
                   <div>
                     <p className="font-medium">{reservation.propertyName}</p>
                     <p className="text-sm text-onwarda-muted">
-                      {formatStay(reservation.checkIn, reservation.checkOut)}
+                      {formatStay(reservation.checkIn, reservation.checkOut, dates)}
                     </p>
                   </div>
                   <ClientStatusBadge
@@ -144,11 +151,11 @@ export default async function ClientGuestDetailPage({
         )}
       </ClientSectionCard>
 
-      <ClientSectionCard title="Reservation history">
+      <ClientSectionCard title={messages.screens.reservationHistory}>
         {guest.reservations.length === 0 ? (
           <ClientEmptyState
-            title="No reservations yet."
-            description="When this guest has a stay, it will be listed here."
+            title={messages.screens.noReservationsYet}
+            description={messages.screens.guestStaysEmpty}
           />
         ) : (
           <ul className="divide-y">
@@ -161,7 +168,7 @@ export default async function ClientGuestDetailPage({
                   <div>
                     <p className="font-medium">{reservation.propertyName}</p>
                     <p className="text-sm text-onwarda-muted">
-                      {formatStay(reservation.checkIn, reservation.checkOut)}
+                      {formatStay(reservation.checkIn, reservation.checkOut, dates)}
                     </p>
                   </div>
                   <ClientStatusBadge

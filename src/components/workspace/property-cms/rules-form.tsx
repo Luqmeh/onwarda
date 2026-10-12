@@ -2,14 +2,13 @@
 
 import { useActionState, useMemo } from "react";
 
+import { useI18n } from "@/i18n/provider";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cmsFieldClass, cmsTextareaClass } from "@/components/workspace/property-cms/section";
 import {
   CONTENT_VISIBILITY,
   HOUSE_RULE_KEYS,
-  HOUSE_RULE_LABELS,
-  HOUSE_RULE_STATE_LABELS,
   HOUSE_RULE_STATES,
 } from "@/lib/property-cms/catalog";
 import {
@@ -37,6 +36,7 @@ export function PropertyHouseRulesForm({
     () => updatePropertyHouseRulesAction.bind(null, propertyId),
     [propertyId],
   );
+  const { messages } = useI18n();
   const [state, formAction, pending] = useActionState(action, initialState);
   const byKey = new Map(rules.map((rule) => [rule.ruleKey, rule]));
 
@@ -46,7 +46,9 @@ export function PropertyHouseRulesForm({
         const current = byKey.get(ruleKey);
         return (
           <div key={ruleKey} className="rounded-xl bg-onwarda-cream/60 p-4">
-            <p className="mb-3 font-medium">{HOUSE_RULE_LABELS[ruleKey]}</p>
+            <p className="mb-3 font-medium">
+              {ruleKey === "checkout" ? messages.catalog.checkout_rules : messages.catalog[ruleKey]}
+            </p>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor={`state_${ruleKey}`}>State</Label>
@@ -58,7 +60,7 @@ export function PropertyHouseRulesForm({
                 >
                   {Object.values(HOUSE_RULE_STATES).map((stateValue) => (
                     <option key={stateValue} value={stateValue}>
-                      {HOUSE_RULE_STATE_LABELS[stateValue]}
+                      {messages.catalog[stateValue]}
                     </option>
                   ))}
                 </select>
@@ -97,7 +99,7 @@ export function PropertyHouseRulesForm({
         </p>
       ) : null}
       <Button type="submit" disabled={pending}>
-        {pending ? "Saving..." : "Save house rules"}
+        {pending ? messages.actions.saving : messages.actions.saveRules}
       </Button>
     </form>
   );

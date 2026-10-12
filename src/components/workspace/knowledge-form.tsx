@@ -1,5 +1,7 @@
 "use client";
 
+import { useI18n } from "@/i18n/provider";
+
 import { useActionState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -19,6 +21,7 @@ type KnowledgeFormProps = {
 };
 
 export function CreateKnowledgeForm({ properties }: KnowledgeFormProps) {
+  const { messages } = useI18n();
   const [state, formAction, pending] = useActionState(
     createWorkspaceKnowledgeAction,
     initialState,
@@ -27,7 +30,7 @@ export function CreateKnowledgeForm({ properties }: KnowledgeFormProps) {
   if (properties.length === 0) {
     return (
       <p className="text-sm text-onwarda-muted">
-        Add a property first, then you can keep house notes for it.
+        {messages.screens.addPropertyFirst}
       </p>
     );
   }
@@ -36,7 +39,7 @@ export function CreateKnowledgeForm({ properties }: KnowledgeFormProps) {
     <form action={formAction} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="propertyId">Property</Label>
+          <Label htmlFor="propertyId">{messages.copy.property}</Label>
           <select
             id="propertyId"
             name="propertyId"
@@ -51,7 +54,7 @@ export function CreateKnowledgeForm({ properties }: KnowledgeFormProps) {
           </select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="category">Category</Label>
+          <Label htmlFor="category">{messages.fields.category}</Label>
           <select
             id="category"
             name="category"
@@ -66,7 +69,7 @@ export function CreateKnowledgeForm({ properties }: KnowledgeFormProps) {
           </select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="visibility">Visibility</Label>
+          <Label htmlFor="visibility">{messages.fields.visibility}</Label>
           <select
             id="visibility"
             name="visibility"
@@ -80,11 +83,11 @@ export function CreateKnowledgeForm({ properties }: KnowledgeFormProps) {
         </div>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="title">Title</Label>
+        <Label htmlFor="title">{messages.fields.title}</Label>
         <Input id="title" name="title" required maxLength={160} placeholder="Wi-Fi details" />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="body">Details</Label>
+        <Label htmlFor="body">{messages.fields.details}</Label>
         <textarea
           id="body"
           name="body"
@@ -101,7 +104,7 @@ export function CreateKnowledgeForm({ properties }: KnowledgeFormProps) {
         </p>
       ) : null}
       <Button type="submit" disabled={pending}>
-        {pending ? "Saving..." : "Add knowledge"}
+        {pending ? messages.actions.saving : messages.screens.addKnowledge}
       </Button>
     </form>
   );

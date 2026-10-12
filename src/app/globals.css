@@ -137,7 +137,9 @@
   html {
     @apply font-sans;
     }
-  html[dir="rtl"] body {
+  html[dir="rtl"] body,
+  .font-arabic,
+  [dir="rtl"] {
     font-family: var(--font-arabic), var(--font-sans), sans-serif;
     }
 }

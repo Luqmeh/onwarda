@@ -6,29 +6,36 @@ import {
   ClientSectionCard,
 } from "@/components/workspace/client-ui";
 import { clientGuestPath } from "@/config/client";
+import { getRequestI18n } from "@/i18n/get-locale";
+import { clientMetadata } from "@/i18n/page-title";
+import { formattingLocale } from "@/i18n/locale";
 import { listWorkspaceGuests } from "@/lib/workspace/data";
 import { formatStay, guestDisplayName } from "@/lib/workspace/format";
 
-export const metadata = {
-  title: "Guests",
-};
+export async function generateMetadata() {
+  return clientMetadata((messages) => ({ title: messages.titles.guests }));
+}
 
 export default async function ClientGuestsPage() {
-  const guests = await listWorkspaceGuests();
+  const [{ locale, messages }, guests] = await Promise.all([
+    getRequestI18n(),
+    listWorkspaceGuests(),
+  ]);
+  const dates = formattingLocale(locale);
 
   return (
     <div className="space-y-6">
       <ClientPageHeader
-        kicker="People"
-        title="Guests"
-        description="A simple directory of guests who have stayed, or will stay, with this organization."
+        kicker={messages.screens.people}
+        title={messages.copy.guests}
+        description={messages.screens.guestsIntro}
       />
 
       {guests.length === 0 ? (
-        <ClientSectionCard title="Guests">
+        <ClientSectionCard title={messages.copy.guests}>
           <ClientEmptyState
-            title="Guests will appear here."
-            description="Names stay with this organization. The directory fills in as stays are added."
+            title={messages.copy.guestsEmptyTitle}
+            description={messages.screens.guestsListEmpty}
           />
         </ClientSectionCard>
       ) : (
@@ -49,14 +56,14 @@ export default async function ClientGuestsPage() {
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block font-medium">{name}</span>
-                    <span className="block truncate text-sm text-onwarda-muted">{guest.email ?? "No email on file"}</span>
+                    <span className="block truncate text-sm text-onwarda-muted">{guest.email ?? messages.copy.noEmail}</span>
                   </span>
                   <span className="text-right text-sm text-onwarda-muted">
                     {guest.stayCount} stays
                     <span className="mt-1 block">
                       {guest.latestReservation
-                        ? formatStay(guest.latestReservation.checkIn, guest.latestReservation.checkOut)
-                        : "No stay yet"}
+                        ? formatStay(guest.latestReservation.checkIn, guest.latestReservation.checkOut, dates)
+                        : messages.screens.noStayYet}
                     </span>
                   </span>
                 </Link>

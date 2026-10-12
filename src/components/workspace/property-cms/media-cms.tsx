@@ -1,5 +1,7 @@
 "use client";
 
+import { useI18n } from "@/i18n/provider";
+
 import { useActionState, useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -39,6 +41,7 @@ export function PropertyMediaCms({
   media: MediaItem[];
   canEdit: boolean;
 }) {
+  const { messages } = useI18n();
   const images = media.filter((item) => item.mediaType === "image");
   const video = media.find((item) => item.mediaType === "video");
   const tour = media.find((item) => item.mediaType === "tour_360");
@@ -47,12 +50,9 @@ export function PropertyMediaCms({
   return (
     <div className="space-y-8">
       <div className="space-y-4">
-        <p className="text-sm text-onwarda-muted">
-          Images are stored privately under this organization and property. Public and guest
-          surfaces will only receive the visibility you set here.
-        </p>
+        <p className="text-sm text-onwarda-muted">{messages.catalog.imagePreview}</p>
         {images.length === 0 ? (
-          <p className="text-sm text-onwarda-muted">No images yet.</p>
+          <p className="text-sm text-onwarda-muted">{messages.catalog.noImages}</p>
         ) : (
           <ul className="grid gap-4 md:grid-cols-2">
             {images.map((image) => (
@@ -61,7 +61,7 @@ export function PropertyMediaCms({
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={image.signedUrl}
-                    alt={image.altText || image.caption || "Property image"}
+                    alt={image.altText || image.caption || messages.catalog.propertyImage}
                     className="h-48 w-full object-cover"
                   />
                 ) : (
@@ -71,7 +71,9 @@ export function PropertyMediaCms({
                 )}
                 <div className="space-y-3 p-4">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-medium capitalize">{image.role}</p>
+                    <p className="text-sm font-medium">
+                      {image.role === "hero" ? messages.catalog.hero : messages.catalog.gallery}
+                    </p>
                     <VisibilityBadge visibility={image.visibility} />
                   </div>
                   {image.caption ? (
@@ -96,15 +98,15 @@ export function PropertyMediaCms({
       ) : (
         <dl className="grid gap-3 text-sm">
           <div>
-            <dt className="text-onwarda-muted">Property video</dt>
+            <dt className="text-onwarda-muted">{messages.catalog.propertyVideo}</dt>
             <dd className="mt-1 break-all">{video?.externalUrl ?? "—"}</dd>
           </div>
           <div>
-            <dt className="text-onwarda-muted">360° tour</dt>
+            <dt className="text-onwarda-muted">{messages.catalog.tour}</dt>
             <dd className="mt-1 break-all">{tour?.externalUrl ?? "—"}</dd>
           </div>
           <div>
-            <dt className="text-onwarda-muted">Instructional video</dt>
+            <dt className="text-onwarda-muted">{messages.catalog.instructionalVideo}</dt>
             <dd className="mt-1 break-all">{instructional?.externalUrl ?? "—"}</dd>
           </div>
         </dl>
@@ -114,6 +116,7 @@ export function PropertyMediaCms({
 }
 
 function UploadImageForm({ propertyId }: { propertyId: string }) {
+  const { messages } = useI18n();
   const action = useMemo(
     () => uploadPropertyImageAction.bind(null, propertyId),
     [propertyId],
@@ -122,33 +125,33 @@ function UploadImageForm({ propertyId }: { propertyId: string }) {
 
   return (
     <form action={formAction} className="space-y-4 rounded-xl bg-onwarda-cream/70 p-4">
-      <p className="font-medium">Upload image</p>
+      <p className="font-medium">{messages.actions.uploadImage}</p>
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor="image">PNG, JPEG, or WebP · 8 MB max</Label>
+          <Label htmlFor="image">{messages.catalog.imageHint}</Label>
           <Input id="image" name="image" type="file" accept="image/png,image/jpeg,image/webp" required />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="role">Placement</Label>
+          <Label htmlFor="role">{messages.fields.placement}</Label>
           <select id="role" name="role" defaultValue="gallery" className={cmsFieldClass}>
-            <option value="hero">Hero</option>
-            <option value="gallery">Gallery</option>
+            <option value="hero">{messages.catalog.hero}</option>
+            <option value="gallery">{messages.catalog.gallery}</option>
           </select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="visibility">Visibility</Label>
+          <Label htmlFor="visibility">{messages.fields.visibility}</Label>
           <select id="visibility" name="visibility" defaultValue="public" className={cmsFieldClass}>
-            <option value="public">Public</option>
-            <option value="guest">Guest only</option>
-            <option value="private">Private</option>
+            <option value="public">{messages.screens.public}</option>
+            <option value="guest">{messages.screens.guestOnly}</option>
+            <option value="private">{messages.screens.private}</option>
           </select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="caption">Caption</Label>
+          <Label htmlFor="caption">{messages.fields.caption}</Label>
           <Input id="caption" name="caption" maxLength={200} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="altText">Alt text</Label>
+          <Label htmlFor="altText">{messages.fields.altText}</Label>
           <Input id="altText" name="altText" maxLength={200} />
         </div>
       </div>
@@ -158,7 +161,7 @@ function UploadImageForm({ propertyId }: { propertyId: string }) {
         </p>
       ) : null}
       <Button type="submit" disabled={pending}>
-        {pending ? "Uploading..." : "Upload image"}
+        {pending ? messages.actions.uploading : messages.actions.uploadImage}
       </Button>
     </form>
   );
@@ -171,6 +174,7 @@ function ImageMetaForm({
   propertyId: string;
   image: MediaItem;
 }) {
+  const { messages } = useI18n();
   const updateAction = useMemo(
     () => updatePropertyImageMetaAction.bind(null, propertyId),
     [propertyId],
@@ -194,29 +198,29 @@ function ImageMetaForm({
         <input type="hidden" name="mediaId" value={image.id} />
         <input type="hidden" name="sortOrder" value={image.sortOrder} />
         <select name="role" defaultValue={image.role ?? "gallery"} className={cmsFieldClass}>
-          <option value="hero">Hero</option>
-          <option value="gallery">Gallery</option>
+          <option value="hero">{messages.catalog.hero}</option>
+          <option value="gallery">{messages.catalog.gallery}</option>
         </select>
         <select name="visibility" defaultValue={image.visibility} className={cmsFieldClass}>
-          <option value="public">Public</option>
-          <option value="guest">Guest only</option>
-          <option value="private">Private</option>
+          <option value="public">{messages.screens.public}</option>
+          <option value="guest">{messages.screens.guestOnly}</option>
+          <option value="private">{messages.screens.private}</option>
         </select>
-        <Input name="caption" maxLength={200} defaultValue={image.caption ?? ""} placeholder="Caption" />
-        <Input name="altText" maxLength={200} defaultValue={image.altText ?? ""} placeholder="Alt text" />
+        <Input name="caption" maxLength={200} defaultValue={image.caption ?? ""} placeholder={messages.fields.caption} />
+        <Input name="altText" maxLength={200} defaultValue={image.altText ?? ""} placeholder={messages.fields.altText} />
         {updateState.error ? (
           <p className="text-sm text-destructive sm:col-span-2" role="alert">
             {updateState.error}
           </p>
         ) : null}
         <Button type="submit" variant="outline" size="sm" disabled={updatePending}>
-          {updatePending ? "Saving..." : "Save image"}
+          {updatePending ? messages.actions.saving : messages.actions.saveImage}
         </Button>
       </form>
       <form action={deleteFormAction}>
         <input type="hidden" name="mediaId" value={image.id} />
         <Button type="submit" variant="destructive" size="sm" disabled={deletePending}>
-          Remove
+          {deletePending ? messages.actions.saving : messages.catalog.remove}
         </Button>
         {deleteState.error ? (
           <p className="mt-2 text-sm text-destructive" role="alert">
@@ -239,6 +243,7 @@ function ExternalMediaForm({
   tourUrl: string;
   instructionalUrl: string;
 }) {
+  const { messages } = useI18n();
   const action = useMemo(
     () => updatePropertyExternalMediaAction.bind(null, propertyId),
     [propertyId],
@@ -247,20 +252,18 @@ function ExternalMediaForm({
 
   return (
     <form action={formAction} className="space-y-4 rounded-xl bg-onwarda-cream/70 p-4">
-      <p className="font-medium">External media</p>
-      <p className="text-sm text-onwarda-muted">
-        Store https URLs from YouTube, Vimeo, Matterport, or Kuula. Do not paste iframe HTML.
-      </p>
+      <p className="font-medium">{messages.catalog.externalMedia}</p>
+      <p className="text-sm text-onwarda-muted">{messages.catalog.externalMediaHelp}</p>
       <div className="space-y-2">
-        <Label htmlFor="videoUrl">Property video URL</Label>
+        <Label htmlFor="videoUrl">{messages.catalog.propertyVideo}</Label>
         <Input id="videoUrl" name="videoUrl" type="url" defaultValue={videoUrl} placeholder="https://" />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="tourUrl">360° tour URL</Label>
+        <Label htmlFor="tourUrl">{messages.catalog.tour}</Label>
         <Input id="tourUrl" name="tourUrl" type="url" defaultValue={tourUrl} placeholder="https://" />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="instructionalUrl">Instructional video URL</Label>
+        <Label htmlFor="instructionalUrl">{messages.catalog.instructionalVideo}</Label>
         <Input
           id="instructionalUrl"
           name="instructionalUrl"
@@ -275,7 +278,7 @@ function ExternalMediaForm({
         </p>
       ) : null}
       <Button type="submit" disabled={pending}>
-        {pending ? "Saving..." : "Save external media"}
+        {pending ? messages.actions.saving : messages.actions.saveExternal}
       </Button>
     </form>
   );

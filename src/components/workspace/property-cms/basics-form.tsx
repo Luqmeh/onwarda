@@ -2,14 +2,13 @@
 
 import { useActionState, useMemo } from "react";
 
+import { useI18n } from "@/i18n/provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cmsFieldClass, cmsTextareaClass } from "@/components/workspace/property-cms/section";
 import {
-  PROPERTY_CONTENT_LANGUAGE_LABELS,
   PROPERTY_CONTENT_LANGUAGES,
-  PROPERTY_TYPE_LABELS,
 } from "@/lib/property-cms/catalog";
 import {
   updateWorkspacePropertyAction,
@@ -56,6 +55,7 @@ export function PropertyBasicsForm({
   isListedPublicly: boolean;
   bookingUrl: string | null;
 }) {
+  const { messages } = useI18n();
   const action = useMemo(
     () => updateWorkspacePropertyAction.bind(null, propertyId),
     [propertyId],
@@ -66,11 +66,11 @@ export function PropertyBasicsForm({
     <form action={formAction} className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor="name">Property name</Label>
+          <Label htmlFor="name">{messages.fields.propertyName}</Label>
           <Input id="name" name="name" required maxLength={120} defaultValue={name} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="internalIdentifier">Internal identifier</Label>
+          <Label htmlFor="internalIdentifier">{messages.fields.internalId}</Label>
           <Input
             id="internalIdentifier"
             name="internalIdentifier"
@@ -78,38 +78,38 @@ export function PropertyBasicsForm({
             defaultValue={internalIdentifier ?? ""}
             placeholder="ATLAS-01"
           />
-          <p className="text-xs text-onwarda-muted">Operator-facing only. Never shown on public pages.</p>
+          <p className="text-xs text-onwarda-muted">{messages.catalog.internalIdHelp}</p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="propertyType">Property type</Label>
+          <Label htmlFor="propertyType">{messages.fields.propertyType}</Label>
           <select
             id="propertyType"
             name="propertyType"
             defaultValue={propertyType ?? ""}
             className={cmsFieldClass}
           >
-            <option value="">Not set</option>
+            <option value="">{messages.catalog.notSet}</option>
             {Object.values(PROPERTY_TYPES).map((type) => (
               <option key={type} value={type}>
-                {PROPERTY_TYPE_LABELS[type]}
+                {messages.catalog[type]}
               </option>
             ))}
           </select>
         </div>
         <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor="address">Address</Label>
+          <Label htmlFor="address">{messages.fields.address}</Label>
           <Input id="address" name="address" maxLength={200} defaultValue={address ?? ""} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="city">City</Label>
+          <Label htmlFor="city">{messages.fields.city}</Label>
           <Input id="city" name="city" maxLength={80} defaultValue={city ?? ""} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="country">Country</Label>
+          <Label htmlFor="country">{messages.fields.country}</Label>
           <Input id="country" name="country" maxLength={80} defaultValue={country ?? ""} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="capacity">Maximum guests</Label>
+          <Label htmlFor="capacity">{messages.fields.maxGuests}</Label>
           <Input
             id="capacity"
             name="capacity"
@@ -120,7 +120,7 @@ export function PropertyBasicsForm({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="bedrooms">Bedrooms</Label>
+          <Label htmlFor="bedrooms">{messages.fields.bedrooms}</Label>
           <Input
             id="bedrooms"
             name="bedrooms"
@@ -131,7 +131,7 @@ export function PropertyBasicsForm({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="bathrooms">Bathrooms</Label>
+          <Label htmlFor="bathrooms">{messages.fields.bathrooms}</Label>
           <Input
             id="bathrooms"
             name="bathrooms"
@@ -143,11 +143,11 @@ export function PropertyBasicsForm({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="checkInTime">Check-in</Label>
+          <Label htmlFor="checkInTime">{messages.fields.checkIn}</Label>
           <Input id="checkInTime" name="checkInTime" type="time" defaultValue={checkInTime ?? ""} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="checkOutTime">Checkout</Label>
+          <Label htmlFor="checkOutTime">{messages.fields.checkOut}</Label>
           <Input
             id="checkOutTime"
             name="checkOutTime"
@@ -156,20 +156,20 @@ export function PropertyBasicsForm({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="status">Status</Label>
+          <Label htmlFor="status">{messages.fields.status}</Label>
           <select
             id="status"
             name="status"
             defaultValue={status === "archived" ? "inactive" : status}
             className={cmsFieldClass}
           >
-            <option value="draft">Draft</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+            <option value="draft">{messages.screens.draft}</option>
+            <option value="active">{messages.screens.active}</option>
+            <option value="inactive">{messages.screens.inactive}</option>
           </select>
         </div>
         <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor="bookingUrl">Public booking URL</Label>
+          <Label htmlFor="bookingUrl">{messages.fields.bookingUrl}</Label>
           <Input
             id="bookingUrl"
             name="bookingUrl"
@@ -178,9 +178,7 @@ export function PropertyBasicsForm({
             defaultValue={bookingUrl ?? ""}
             placeholder="https://"
           />
-          <p className="text-xs text-onwarda-muted">
-            Optional https link for the public property page. Onwarda does not process payments.
-          </p>
+          <p className="text-xs text-onwarda-muted">{messages.catalog.bookingUrlHelp}</p>
         </div>
         <label className="flex items-start gap-2 text-sm sm:col-span-2">
           <input
@@ -190,15 +188,15 @@ export function PropertyBasicsForm({
             className="mt-1"
           />
           <span>
-            List this home on the public operator page when status is active.
+            {messages.catalog.listedPublicly}
             <span className="mt-1 block text-xs text-onwarda-muted">
-              Draft, inactive, and private content stay hidden regardless of this setting.
+              {messages.catalog.listedPubliclyHelp}
             </span>
           </span>
         </label>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="description">Short description</Label>
+        <Label htmlFor="description">{messages.fields.shortDescription}</Label>
         <textarea
           id="description"
           name="description"
@@ -209,7 +207,7 @@ export function PropertyBasicsForm({
         />
       </div>
       <fieldset className="space-y-2">
-        <legend className="text-sm font-medium">Supported languages</legend>
+        <legend className="text-sm font-medium">{messages.fields.supportedLanguages}</legend>
         <div className="flex flex-wrap gap-3">
           {Object.values(PROPERTY_CONTENT_LANGUAGES).map((code) => (
             <label key={code} className="flex items-center gap-2 text-sm">
@@ -219,7 +217,17 @@ export function PropertyBasicsForm({
                 value={code}
                 defaultChecked={languages.includes(code)}
               />
-              {PROPERTY_CONTENT_LANGUAGE_LABELS[code]}
+              {code === "en"
+                ? messages.languages.en
+                : code === "fr"
+                  ? messages.languages.fr
+                  : code === "ar"
+                    ? messages.languages.ar
+                    : code === "es"
+                      ? messages.catalog.spanish
+                      : code === "de"
+                        ? messages.catalog.german
+                        : messages.catalog.italian}
             </label>
           ))}
         </div>
@@ -230,7 +238,7 @@ export function PropertyBasicsForm({
         </p>
       ) : null}
       <Button type="submit" disabled={pending}>
-        {pending ? "Saving..." : "Save basic information"}
+        {pending ? messages.actions.saving : messages.actions.saveBasic}
       </Button>
     </form>
   );

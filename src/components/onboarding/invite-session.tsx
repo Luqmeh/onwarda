@@ -3,21 +3,24 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { useI18n } from "@/i18n/provider";
 import { createSupabaseBrowserClient } from "@/lib/database/browser";
 
 export function InviteSessionGate() {
   const router = useRouter();
-  const [message, setMessage] = useState("Opening your invitation…");
+  const { messages } = useI18n();
+  const [message, setMessage] = useState(messages.onboarding.openingInvitation);
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
     const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
     const query = new URLSearchParams(window.location.search);
     const description = hash.get("error_description") || query.get("error_description");
+    const expired = messages.onboarding.invitationExpired;
 
     async function establish() {
       if (description) {
-        setMessage("This invitation link is invalid or has expired. Ask your host to send a new one.");
+        setMessage(expired);
         return;
       }
 
@@ -31,7 +34,7 @@ export function InviteSessionGate() {
         });
 
         if (error) {
-          setMessage("This invitation link is invalid or has expired. Ask your host to send a new one.");
+          setMessage(expired);
           return;
         }
 
@@ -46,7 +49,7 @@ export function InviteSessionGate() {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
 
         if (error) {
-          setMessage("This invitation link is invalid or has expired. Ask your host to send a new one.");
+          setMessage(expired);
           return;
         }
 
@@ -65,7 +68,7 @@ export function InviteSessionGate() {
         });
 
         if (error) {
-          setMessage("This invitation link is invalid or has expired. Ask your host to send a new one.");
+          setMessage(expired);
           return;
         }
 
@@ -78,7 +81,7 @@ export function InviteSessionGate() {
     }
 
     void establish();
-  }, [router]);
+  }, [router, messages.onboarding.invitationExpired]);
 
   return (
     <main className="onwarda-client flex min-h-svh items-center justify-center px-6">

@@ -1,5 +1,7 @@
 "use client";
 
+import { useI18n } from "@/i18n/provider";
+
 import { useActionState, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -60,6 +62,7 @@ export function WorkspaceBrandingForm({
 }: {
   branding: ResolvedOrganizationBranding;
 }) {
+  const { messages } = useI18n();
   const [state, formAction, pending] = useActionState(
     updateWorkspaceBrandingAction,
     initialState,
@@ -81,7 +84,7 @@ export function WorkspaceBrandingForm({
     <div className="space-y-6">
       <form action={formAction} className="space-y-5">
         <div className="space-y-2">
-          <Label htmlFor="workspace-display-name">Display name</Label>
+          <Label htmlFor="workspace-display-name">{messages.fields.displayName}</Label>
           <Input
             id="workspace-display-name"
             name="displayName"
@@ -95,7 +98,7 @@ export function WorkspaceBrandingForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="workspace-public-description">Public description</Label>
+          <Label htmlFor="workspace-public-description">{messages.fields.publicDescription}</Label>
           <textarea
             id="workspace-public-description"
             name="publicDescription"
@@ -111,7 +114,7 @@ export function WorkspaceBrandingForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="workspace-logo">Logo</Label>
+          <Label htmlFor="workspace-logo">{messages.fields.logo}</Label>
           {logoPreview ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -120,7 +123,7 @@ export function WorkspaceBrandingForm({
               className="mb-2 size-16 rounded-md border object-contain"
             />
           ) : (
-            <p className="text-sm text-onwarda-muted">No logo uploaded yet.</p>
+            <p className="text-sm text-onwarda-muted">{messages.screens.noLogoYet}</p>
           )}
           <Input
             id="workspace-logo"

@@ -1,5 +1,7 @@
 "use client";
 
+import { useI18n } from "@/i18n/provider";
+
 import { useActionState, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -35,6 +37,7 @@ export function CreateReservationForm({
   guests: GuestOption[];
   defaultPropertyId?: string;
 }) {
+  const { messages } = useI18n();
   const [state, formAction, pending] = useActionState(
     createWorkspaceReservationAction,
     initialState,
@@ -46,7 +49,7 @@ export function CreateReservationForm({
   return (
     <form action={formAction} className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="propertyId">Property</Label>
+        <Label htmlFor="propertyId">{messages.fields.propertyName}</Label>
         <select
           id="propertyId"
           name="propertyId"
@@ -66,7 +69,7 @@ export function CreateReservationForm({
       </div>
 
       <fieldset className="space-y-3">
-        <legend className="text-sm font-medium">Guest</legend>
+        <legend className="text-sm font-medium">{messages.fields.guest}</legend>
         <div className="flex flex-wrap gap-4 text-sm">
           <label className="flex items-center gap-2">
             <input
@@ -92,7 +95,7 @@ export function CreateReservationForm({
         </div>
         {guestMode === "existing" ? (
           <div className="space-y-2">
-            <Label htmlFor="guestId">Guest in this organization</Label>
+            <Label htmlFor="guestId">{messages.fields.guestInOrg}</Label>
             <select
               id="guestId"
               name="guestId"
@@ -114,19 +117,19 @@ export function CreateReservationForm({
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="firstName">First name</Label>
+              <Label htmlFor="firstName">{messages.fields.firstName}</Label>
               <Input id="firstName" name="firstName" required maxLength={80} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="lastName">Last name</Label>
+              <Label htmlFor="lastName">{messages.fields.lastName}</Label>
               <Input id="lastName" name="lastName" required maxLength={80} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{messages.auth.email}</Label>
               <Input id="email" name="email" type="email" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone</Label>
+              <Label htmlFor="phone">{messages.fields.phone}</Label>
               <Input id="phone" name="phone" maxLength={40} />
             </div>
           </div>
@@ -139,11 +142,11 @@ export function CreateReservationForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="checkIn">Arrival</Label>
+          <Label htmlFor="checkIn">{messages.fields.arrival}</Label>
           <Input id="checkIn" name="checkIn" type="date" required />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="checkOut">Departure</Label>
+          <Label htmlFor="checkOut">{messages.fields.departure}</Label>
           <Input id="checkOut" name="checkOut" type="date" required />
         </div>
       </div>

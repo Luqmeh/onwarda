@@ -1,7 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PasswordChangeForm } from "@/components/auth/password-change-form";
 import { getPublicEnv } from "@/config/env";
+import { getMessages } from "@/i18n/get-messages";
 import { requireActivePlatformAdminWithMfa } from "@/lib/authorization/platform-admin";
+import { labeledStatus } from "@/lib/workspace/format";
 
 export const metadata = {
   title: "Settings",
@@ -9,35 +11,34 @@ export const metadata = {
 
 export default async function AdminSettingsPage() {
   const admin = await requireActivePlatformAdminWithMfa();
+  const messages = getMessages("en");
   const env = getPublicEnv();
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-        <p className="text-sm text-muted-foreground">
-          Platform operator account and application configuration.
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight">{messages.nav.settings}</h1>
+        <p className="text-sm text-muted-foreground">{messages.copy.adminSettingsBody}</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Administrator</CardTitle>
-          <CardDescription>The signed-in platform administrator.</CardDescription>
+          <CardTitle>{messages.copy.administrator}</CardTitle>
+          <CardDescription>{messages.copy.administratorBody}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
           <div>
-            <p className="text-muted-foreground">Email</p>
-            <p className="font-medium">
-              {admin.user.email ?? admin.profile?.email ?? "Unknown"}
+            <p className="text-muted-foreground">{messages.copy.email}</p>
+            <p className="font-medium" dir="ltr">
+              {admin.user.email ?? admin.profile?.email ?? messages.copy.unknown}
             </p>
           </div>
           <div>
-            <p className="text-muted-foreground">Role</p>
-            <p className="font-medium">{admin.admin.role}</p>
+            <p className="text-muted-foreground">{messages.copy.role}</p>
+            <p className="font-medium">{labeledStatus(admin.admin.role, messages.roles)}</p>
           </div>
           <div>
-            <p className="text-muted-foreground">Status</p>
+            <p className="text-muted-foreground">{messages.copy.status}</p>
             <p className="font-medium capitalize">{admin.admin.status}</p>
           </div>
         </CardContent>

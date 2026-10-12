@@ -23,6 +23,7 @@ import {
   requestPasswordRecovery,
   verifyPasswordRecoveryCode,
 } from "@/lib/auth/password-recovery";
+import { useI18n } from "@/i18n/provider";
 import { createSupabaseBrowserClient } from "@/lib/database/browser";
 
 type Step = "email" | "code" | "password" | "done";
@@ -38,6 +39,7 @@ export function PasswordRecoveryForm({ audience }: { audience: PasswordAudience 
   const [confirmPassword, setConfirmPassword] = useState("");
   const cooldownTimer = useRef<number | null>(null);
   const loginPath = recoveryLoginPath(audience);
+  const { messages } = useI18n();
 
   useEffect(() => {
     return () => {
@@ -114,7 +116,7 @@ export function PasswordRecoveryForm({ audience }: { audience: PasswordAudience 
         setPending(false);
         setStep("email");
         setNotice(null);
-        setError("This recovery code cannot be used for a platform administrator account.");
+        setError(messages.auth.adminRecoveryRejected);
         return;
       }
     }
@@ -144,7 +146,7 @@ export function PasswordRecoveryForm({ audience }: { audience: PasswordAudience 
         await supabase.auth.signOut();
         setPending(false);
         setStep("email");
-        setError("This recovery code cannot be used for a platform administrator account.");
+        setError(messages.auth.adminRecoveryRejected);
         return;
       }
     }
@@ -173,14 +175,12 @@ export function PasswordRecoveryForm({ audience }: { audience: PasswordAudience 
   if (step === "done") {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Password updated</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{messages.auth.passwordUpdated}</h1>
         <p className="text-sm text-muted-foreground" role="status">
-          {audience === "admin"
-            ? "Sign in again with the new password. That login still asks for a current authenticator code before the console opens."
-            : "Sign in again with the new password."}
+          {audience === "admin" ? messages.auth.adminPasswordUpdated : messages.auth.clientPasswordUpdated}
         </p>
         <Button asChild className="w-full">
-          <Link href={loginPath}>Sign in</Link>
+          <Link href={loginPath}>{messages.auth.signIn}</Link>
         </Button>
       </div>
     );
@@ -191,10 +191,8 @@ export function PasswordRecoveryForm({ audience }: { audience: PasswordAudience 
     return (
       <form key="recovery-password" onSubmit={onPassword} className="space-y-5">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Choose a new password</h1>
-          <p className="text-sm text-muted-foreground">
-            You will sign in again after this is saved.
-          </p>
+          <h1 className="text-2xl font-semibold tracking-tight">{messages.auth.choosePassword}</h1>
+          <p className="text-sm text-muted-foreground">{messages.auth.choosePasswordHelp}</p>
         </div>
         <NewPasswordFields
           idPrefix="recovery"
@@ -209,7 +207,7 @@ export function PasswordRecoveryForm({ audience }: { audience: PasswordAudience 
           </p>
         ) : null}
         <Button type="submit" className="w-full" disabled={pending || !ready}>
-          {pending ? "Saving password..." : "Save password"}
+          {pending ? messages.auth.savingPassword : messages.auth.savePassword}
         </Button>
       </form>
     );
@@ -219,18 +217,19 @@ export function PasswordRecoveryForm({ audience }: { audience: PasswordAudience 
     return (
       <form key="recovery-code" onSubmit={onVerify} className="space-y-5">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Enter the code</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{messages.auth.enterCode}</h1>
           <p className="text-sm text-muted-foreground" role="status">
             {notice ?? RECOVERY_REQUEST_MESSAGE}
           </p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="recovery-code">Recovery code</Label>
+          <Label htmlFor="recovery-code">{messages.auth.recoveryCode}</Label>
           <Input
             id="recovery-code"
             name="recovery-code"
             type="text"
             inputMode="numeric"
+            dir="ltr"
             autoComplete="one-time-code"
             autoCapitalize="none"
             autoCorrect="off"
@@ -247,7 +246,7 @@ export function PasswordRecoveryForm({ audience }: { audience: PasswordAudience 
           </p>
         ) : null}
         <Button type="submit" className="w-full" disabled={pending}>
-          {pending ? "Checking code..." : "Continue"}
+          {pending ? messages.auth.checkingCode : messages.auth.continue}
         </Button>
         <Button
           type="button"
@@ -259,7 +258,7 @@ export function PasswordRecoveryForm({ audience }: { audience: PasswordAudience 
             void sendCode(email).finally(() => setPending(false));
           }}
         >
-          {cooling ? "Code sent" : "Resend code"}
+          {cooling ? messages.auth.codeSent : messages.auth.resendCode}
         </Button>
       </form>
     );
@@ -268,14 +267,12 @@ export function PasswordRecoveryForm({ audience }: { audience: PasswordAudience 
   return (
     <form key="recovery-email" onSubmit={onRequest} className="space-y-5">
       <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Reset your password</h1>
-        <p className="text-sm text-muted-foreground">
-          We will email a recovery code. The code is not a link, and it expires.
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight">{messages.auth.recoveryTitle}</h1>
+        <p className="text-sm text-muted-foreground">{messages.auth.recoveryIntro}</p>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input id="email" name="email" type="email" autoComplete="email" required />
+        <Label htmlFor="email">{messages.auth.email}</Label>
+        <Input id="email" name="email" type="email" dir="ltr" autoComplete="email" required />
       </div>
       {error ? (
         <p className="text-sm text-destructive" role="alert">
@@ -283,11 +280,11 @@ export function PasswordRecoveryForm({ audience }: { audience: PasswordAudience 
         </p>
       ) : null}
       <Button type="submit" className="w-full" disabled={pending}>
-        {pending ? "Sending code..." : "Email me a code"}
+        {pending ? messages.auth.sendingCode : messages.auth.sendCode}
       </Button>
       <p className="text-center text-sm">
         <Link href={loginPath} className="font-medium underline-offset-4 hover:underline">
-          Back to sign in
+          {messages.auth.backToSignIn}
         </Link>
       </p>
     </form>

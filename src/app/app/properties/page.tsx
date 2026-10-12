@@ -8,19 +8,20 @@ import {
   ClientStatusBadge,
 } from "@/components/workspace/client-ui";
 import { CLIENT_ROUTES, canManageWorkspace, clientPropertyPath } from "@/config/client";
-import { PROPERTY_READINESS_LABELS, type PropertyReadiness } from "@/lib/cleaning/catalog";
-import { PROPERTY_TYPE_LABELS } from "@/lib/property-cms/catalog";
+import { getRequestI18n } from "@/i18n/get-locale";
+import { clientMetadata } from "@/i18n/page-title";
+import { fillMessage } from "@/i18n/locale";
 import { requireWorkspaceView } from "@/lib/tenancy/workspace-access";
 import { listWorkspaceProperties } from "@/lib/workspace/data";
 import { propertyLocation, statusTone } from "@/lib/workspace/format";
-import type { PropertyType } from "@/types/enums";
 
-export const metadata = {
-  title: "Properties",
-};
+export async function generateMetadata() {
+  return clientMetadata((messages) => ({ title: messages.titles.properties }));
+}
 
 export default async function ClientPropertiesPage() {
-  const [view, properties] = await Promise.all([
+  const [{ messages }, view, properties] = await Promise.all([
+    getRequestI18n(),
     requireWorkspaceView(),
     listWorkspaceProperties(),
   ]);
@@ -30,27 +31,27 @@ export default async function ClientPropertiesPage() {
   return (
     <div className="space-y-6">
       <ClientPageHeader
-        kicker="Homes"
-        title="Properties"
-        description="The places guests stay. Each property is its own house, riad, or room — never mixed across clients."
+        kicker={messages.copy.homesKicker}
+        title={messages.copy.properties}
+        description={messages.copy.propertiesDescription}
         actions={
           canAdd ? (
             <Button asChild>
-              <Link href={CLIENT_ROUTES.propertyNew}>Add property</Link>
+              <Link href={CLIENT_ROUTES.propertyNew}>{messages.copy.addProperty}</Link>
             </Button>
           ) : null
         }
       />
 
       {properties.length === 0 ? (
-        <ClientSectionCard title="Portfolio">
+        <ClientSectionCard title={messages.copy.portfolio}>
           <ClientEmptyState
-            title="Your property portfolio starts here."
-            description="Add the first home and build the stay your guests will actually use."
+            title={messages.copy.portfolioEmptyTitle}
+            description={messages.copy.portfolioEmptyBody}
             action={
               canAdd ? (
                 <Button asChild>
-                  <Link href={CLIENT_ROUTES.propertyNew}>Add property</Link>
+                  <Link href={CLIENT_ROUTES.propertyNew}>{messages.copy.addProperty}</Link>
                 </Button>
               ) : null
             }
@@ -69,20 +70,34 @@ export default async function ClientPropertiesPage() {
                 <div className="space-y-3 p-4">
                   <div>
                     <p className="font-medium">{property.name}</p>
-                    <p className="text-sm text-onwarda-muted">{propertyLocation(property) ?? "Location not set"}</p>
+                    <p className="text-sm text-onwarda-muted">{propertyLocation(property) ?? messages.copy.locationNotSet}</p>
                   </div>
                   <p className="text-sm text-onwarda-muted">
                     {property.propertyType
-                      ? PROPERTY_TYPE_LABELS[property.propertyType as PropertyType]
-                      : "Home"}{" "}
-                    · {property.reservationCount} stays
+                      ? messages.catalog[property.propertyType as keyof typeof messages.catalog]
+                      : messages.copy.property}
+                    {" · "}
+                    {fillMessage(messages.copy.staysCount, { count: property.reservationCount })}
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    <ClientStatusBadge label={property.status} tone={statusTone(property.status)} />
                     <ClientStatusBadge
                       label={
-                        PROPERTY_READINESS_LABELS[(property.readiness ?? "ready") as PropertyReadiness] ??
-                        "Ready"
+                        property.status === "draft"
+                          ? messages.screens.draft
+                          : property.status === "active"
+                            ? messages.screens.active
+                            : property.status === "inactive"
+                              ? messages.screens.inactive
+                              : property.status === "archived"
+                                ? messages.screens.archived
+                                : property.status
+                      }
+                      tone={statusTone(property.status)}
+                    />
+                    <ClientStatusBadge
+                      label={
+                        messages.catalog[(property.readiness ?? "ready") as keyof typeof messages.catalog] ??
+                        messages.catalog.ready
                       }
                       tone={property.readiness === "ready" ? "olive" : "coral"}
                     />

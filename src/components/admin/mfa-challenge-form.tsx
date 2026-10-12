@@ -2,6 +2,8 @@
 
 import { useActionState } from "react";
 
+import { useI18n } from "@/i18n/provider";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,12 +12,13 @@ import { verifyAdminTotpChallenge, type MfaActionState } from "@/lib/admin/mfa-a
 const initialState: MfaActionState = {};
 
 export function MfaChallengeForm({ nextPath }: { nextPath: string }) {
+  const { messages } = useI18n();
   const [state, formAction, pending] = useActionState(verifyAdminTotpChallenge, initialState);
 
   return (
     <form action={formAction} className="space-y-5">
       <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Enter your authenticator code</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{messages.screens.authenticatorCode}</h1>
         <p className="text-sm text-muted-foreground">
           Open the authenticator app you enrolled for Onwarda and enter the current 6-digit code.
         </p>

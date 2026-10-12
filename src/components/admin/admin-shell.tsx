@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ADMIN_ROUTES } from "@/config/admin";
 import { APP_NAME } from "@/config/app";
+import { getMessages } from "@/i18n/get-messages";
+import { I18nProvider } from "@/i18n/provider";
 import { signOutAction } from "@/lib/auth/actions";
 import type { ActiveSupportSession } from "@/lib/admin/support";
 
@@ -19,16 +21,19 @@ type AdminShellProps = {
   children: ReactNode;
 };
 
-export function AdminShell({
+export async function AdminShell({
   email,
   role,
   supportSession,
   children,
 }: AdminShellProps) {
+  const messages = getMessages("en");
   const signOut = signOutAction.bind(null, ADMIN_ROUTES.login);
+  const roleLabel = messages.roles[role as keyof typeof messages.roles] ?? role;
 
   return (
-    <div className="min-h-svh bg-background">
+    <div lang="en" dir="ltr" className="min-h-svh bg-background">
+      <I18nProvider locale="en" messages={messages}>
       {supportSession ? <SupportModeBanner session={supportSession} /> : null}
       <header className="sticky top-0 z-30 border-b bg-background">
         <div className="relative flex h-14 items-center justify-between gap-3 px-4 md:px-6">
@@ -37,11 +42,11 @@ export function AdminShell({
             <Link href={ADMIN_ROUTES.root} className="font-semibold tracking-tight">
               {APP_NAME}
             </Link>
-            <span className="hidden text-xs font-medium tracking-[0.16em] text-muted-foreground uppercase sm:inline">
-              Internal Admin
+            <span className="hidden text-xs font-medium text-muted-foreground sm:inline">
+              {messages.shell.internalAdmin}
             </span>
           </div>
-          <AdminUserMenu email={email} role={role} />
+          <AdminUserMenu email={email} role={roleLabel} />
         </div>
       </header>
 
@@ -53,12 +58,13 @@ export function AdminShell({
           <Separator />
           <form action={signOut} className="p-4">
             <Button type="submit" variant="ghost" className="w-full justify-start">
-              Sign out
+              {messages.auth.signOut}
             </Button>
           </form>
         </aside>
         <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">{children}</main>
       </div>
+      </I18nProvider>
     </div>
   );
 }

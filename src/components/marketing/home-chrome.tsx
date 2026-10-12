@@ -121,7 +121,7 @@ export function HomeFooter() {
 
   return (
     <footer className="border-t border-[var(--mk-line)] bg-[var(--mk-paper)]">
-      <div className="mx-auto grid max-w-[1200px] gap-10 px-5 py-14 md:grid-cols-[1.2fr_2fr] md:px-8">
+      <div className="mx-auto grid max-w-[1180px] gap-12 px-5 py-16 md:grid-cols-[1.1fr_2fr] md:px-8 md:py-20">
         <div>
           <p className="text-lg font-medium tracking-tight lowercase">onwarda</p>
           <p className="mt-2 text-[0.68rem] tracking-[0.18em] text-[var(--mk-olive)] uppercase">{ONWARDA_TAGLINE}</p>
@@ -143,7 +143,7 @@ export function HomeFooter() {
           ))}
         </div>
       </div>
-      <p className="mx-auto max-w-[1200px] px-5 pb-8 text-xs text-[var(--mk-muted)] md:px-8">
+      <p className="mx-auto max-w-[1180px] px-5 pb-10 text-xs text-[var(--mk-muted)] md:px-8">
         © {new Date().getFullYear()} Onwarda
       </p>
     </footer>

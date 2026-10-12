@@ -57,14 +57,26 @@ describe("admin sign-in", () => {
     expect(signOut).toHaveBeenCalled();
   });
 
-  it("redirects a platform administrator to /admin", async () => {
-    vi.mocked(createSupabaseServerClient).mockResolvedValue({
+  function adminClient(verified: boolean, currentLevel: "aal1" | "aal2") {
+    return {
       auth: {
         signInWithPassword: vi.fn().mockResolvedValue({ error: null }),
         getUser: vi.fn().mockResolvedValue({
-          data: { user: { id: "admin-user" } },
+          data: { user: { id: "admin-user", email: "admin@onwarda.com" } },
         }),
         signOut: vi.fn(),
+        mfa: {
+          getAuthenticatorAssuranceLevel: vi.fn(async () => ({
+            data: { currentLevel, nextLevel: "aal2" },
+            error: null,
+          })),
+          listFactors: vi.fn(async () => ({
+            data: {
+              totp: verified ? [{ id: "factor-1", status: "verified" }] : [],
+            },
+            error: null,
+          })),
+        },
       },
       from: vi.fn(() => {
         const builder: Record<string, unknown> = {};
@@ -77,10 +89,28 @@ describe("admin sign-in", () => {
         }));
         return builder;
       }),
-    } as never);
+    };
+  }
+
+  it("redirects a platform administrator with aal2 to /admin", async () => {
+    vi.mocked(createSupabaseServerClient).mockResolvedValue(adminClient(true, "aal2") as never);
 
     await expect(signInAction({}, createForm("/admin"))).rejects.toThrow(
       "NEXT_REDIRECT:/admin",
+    );
+  });
+
+  it("sends an aal1 platform administrator to authenticator setup or challenge", async () => {
+    vi.mocked(createSupabaseServerClient).mockResolvedValue(adminClient(false, "aal1") as never);
+
+    await expect(signInAction({}, createForm("/admin"))).rejects.toThrow(
+      "NEXT_REDIRECT:/admin/security/mfa-setup?next=%2Fadmin",
+    );
+
+    vi.mocked(createSupabaseServerClient).mockResolvedValue(adminClient(true, "aal1") as never);
+
+    await expect(signInAction({}, createForm("/admin/clients"))).rejects.toThrow(
+      "NEXT_REDIRECT:/admin/security/mfa-challenge?next=%2Fadmin%2Fclients",
     );
   });
 

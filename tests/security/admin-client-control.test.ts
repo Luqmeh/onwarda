@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthorizationError, ValidationError } from "@/lib/errors";
 
 vi.mock("@/lib/authorization/platform-admin", () => ({
-  requirePlatformAdmin: vi.fn(),
+  requireActivePlatformAdminWithMfa: vi.fn(),
 }));
 
 vi.mock("@/lib/database/admin", () => ({
@@ -23,7 +23,7 @@ vi.mock("next/headers", () => ({
 }));
 
 import { cookies } from "next/headers";
-import { requirePlatformAdmin } from "@/lib/authorization/platform-admin";
+import { requireActivePlatformAdminWithMfa } from "@/lib/authorization/platform-admin";
 import { createServiceRoleClient } from "@/lib/database/admin";
 import { createSupabaseServerClient } from "@/lib/database/server";
 import {
@@ -74,7 +74,7 @@ describe("admin client membership authorization", () => {
   });
 
   it("does not let a non-admin invite, change roles, or suspend members", async () => {
-    vi.mocked(requirePlatformAdmin).mockRejectedValue(new AuthorizationError());
+    vi.mocked(requireActivePlatformAdminWithMfa).mockRejectedValue(new AuthorizationError());
     const organizationId = randomUUID();
     const userId = randomUUID();
 
@@ -112,7 +112,7 @@ describe("admin client membership authorization", () => {
   });
 
   it("does not treat an organization UUID as authorization for membership changes", async () => {
-    vi.mocked(requirePlatformAdmin).mockRejectedValue(new AuthorizationError());
+    vi.mocked(requireActivePlatformAdminWithMfa).mockRejectedValue(new AuthorizationError());
 
     await expect(
       setOrganizationUserRole({
@@ -131,7 +131,7 @@ describe("admin client membership workflow", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(requirePlatformAdmin).mockResolvedValue(adminContext as never);
+    vi.mocked(requireActivePlatformAdminWithMfa).mockResolvedValue(adminContext as never);
     inviteUserByEmail.mockResolvedValue({
       data: { user: { id: "invited-user" } },
       error: null,
@@ -211,7 +211,7 @@ describe("support session authorization", () => {
   });
 
   it("does not start or end support mode without a platform admin", async () => {
-    vi.mocked(requirePlatformAdmin).mockRejectedValue(new AuthorizationError());
+    vi.mocked(requireActivePlatformAdminWithMfa).mockRejectedValue(new AuthorizationError());
 
     await expect(
       startSupportSession({
@@ -230,7 +230,7 @@ describe("support session authorization", () => {
   });
 
   it("requires confirmation and a reason before starting support mode", async () => {
-    vi.mocked(requirePlatformAdmin).mockResolvedValue(adminContext as never);
+    vi.mocked(requireActivePlatformAdminWithMfa).mockResolvedValue(adminContext as never);
 
     await expect(
       startSupportSession({
@@ -242,7 +242,7 @@ describe("support session authorization", () => {
   });
 
   it("starts a support session through the RPC and stores only the session id cookie", async () => {
-    vi.mocked(requirePlatformAdmin).mockResolvedValue(adminContext as never);
+    vi.mocked(requireActivePlatformAdminWithMfa).mockResolvedValue(adminContext as never);
     const organizationId = randomUUID();
     const sessionId = randomUUID();
     rpc.mockResolvedValue({ data: sessionId, error: null });
@@ -277,7 +277,7 @@ describe("support session authorization", () => {
   });
 
   it("ignores an expired support session cookie", async () => {
-    vi.mocked(requirePlatformAdmin).mockResolvedValue(adminContext as never);
+    vi.mocked(requireActivePlatformAdminWithMfa).mockResolvedValue(adminContext as never);
     cookieStore.get.mockReturnValue({ value: "session-1" });
     vi.mocked(createServiceRoleClient).mockReturnValue({
       from: vi.fn(() =>
@@ -301,18 +301,18 @@ describe("support session authorization", () => {
 });
 
 describe("admin client control source safety", () => {
-  it("keeps membership and support mutations behind requirePlatformAdmin", () => {
+  it("keeps membership and support mutations behind requireActivePlatformAdminWithMfa", () => {
     const members = readFileSync(join(process.cwd(), "src/lib/admin/members.ts"), "utf8");
     const support = readFileSync(join(process.cwd(), "src/lib/admin/support.ts"), "utf8");
     const appLayout = readFileSync(join(process.cwd(), "src/app/app/layout.tsx"), "utf8");
 
-    expect(members.indexOf("await requirePlatformAdmin()")).toBeGreaterThan(-1);
+    expect(members.indexOf("await requireActivePlatformAdminWithMfa()")).toBeGreaterThan(-1);
     expect(members.indexOf('rpc("admin_invite_organization_user"')).toBeGreaterThan(
-      members.indexOf("await requirePlatformAdmin()"),
+      members.indexOf("await requireActivePlatformAdminWithMfa()"),
     );
     expect(support).toContain("SUPPORT_SESSION_COOKIE");
     expect(support).not.toContain("organization_users");
     expect(appLayout).not.toContain("getActiveSupportSession");
-    expect(appLayout).not.toContain("requirePlatformAdmin");
+    expect(appLayout).not.toContain("requireActivePlatformAdminWithMfa");
   });
 });

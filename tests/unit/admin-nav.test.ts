@@ -12,6 +12,8 @@ describe("admin navigation", () => {
       clientNew: "/admin/clients/new",
       activity: "/admin/activity",
       settings: "/admin/settings",
+      mfaSetup: "/admin/security/mfa-setup",
+      mfaChallenge: "/admin/security/mfa-challenge",
     });
   });
 

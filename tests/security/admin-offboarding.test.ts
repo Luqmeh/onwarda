@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthorizationError } from "@/lib/errors";
 
 vi.mock("@/lib/authorization/platform-admin", () => ({
-  requirePlatformAdmin: vi.fn(),
+  requireActivePlatformAdminWithMfa: vi.fn(),
 }));
 
 vi.mock("@/lib/database/admin", () => ({
@@ -18,7 +18,7 @@ vi.mock("@/lib/database/server", () => ({
   createSupabaseServerClient: vi.fn(),
 }));
 
-import { requirePlatformAdmin } from "@/lib/authorization/platform-admin";
+import { requireActivePlatformAdminWithMfa } from "@/lib/authorization/platform-admin";
 import { createServiceRoleClient } from "@/lib/database/admin";
 import { createSupabaseServerClient } from "@/lib/database/server";
 import { permanentlyDeleteOrganization } from "@/lib/admin/offboarding";
@@ -128,15 +128,15 @@ function installClients(options?: { storageError?: boolean; eligibleUserIds?: st
 describe("permanent client deletion authorization", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(requirePlatformAdmin).mockResolvedValue({
+    vi.mocked(requireActivePlatformAdminWithMfa).mockResolvedValue({
       user: { id: adminUserId, email: "admin@onwarda.com" },
       profile: null,
       admin: { role: "super_admin", status: "active" },
-    } as Awaited<ReturnType<typeof requirePlatformAdmin>>);
+    } as Awaited<ReturnType<typeof requireActivePlatformAdminWithMfa>>);
   });
 
   it("does not let a non-admin start deletion", async () => {
-    vi.mocked(requirePlatformAdmin).mockRejectedValue(new AuthorizationError());
+    vi.mocked(requireActivePlatformAdminWithMfa).mockRejectedValue(new AuthorizationError());
 
     await expect(
       permanentlyDeleteOrganization({

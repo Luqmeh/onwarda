@@ -1,7 +1,7 @@
 import "server-only";
 
 import { AppError } from "@/lib/errors";
-import { requirePlatformAdmin } from "@/lib/authorization/platform-admin";
+import { requireActivePlatformAdminWithMfa } from "@/lib/authorization/platform-admin";
 import { createServiceRoleClient } from "@/lib/database/admin";
 import { createSupabaseServerClient } from "@/lib/database/server";
 import type { PlatformAdminContext } from "@/types/auth";
@@ -38,7 +38,7 @@ export async function getAdminDashboardData(): Promise<{
   metrics: PlatformMetrics;
   activity: AdminAuditEntry[];
 }> {
-  const admin = await requirePlatformAdmin();
+  const admin = await requireActivePlatformAdminWithMfa();
   const privileged = createServiceRoleClient();
   const scoped = await createSupabaseServerClient();
 
@@ -120,7 +120,7 @@ export async function getAdminDashboardData(): Promise<{
 }
 
 export async function getAdminActivityFeed(limit = 25): Promise<AdminAuditEntry[]> {
-  await requirePlatformAdmin();
+  await requireActivePlatformAdminWithMfa();
   const scoped = await createSupabaseServerClient();
   const { data, error } = await scoped
     .from("audit_logs")

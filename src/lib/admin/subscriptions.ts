@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 
 import { adminClientPath } from "@/config/admin";
-import { requirePlatformAdmin } from "@/lib/authorization/platform-admin";
+import { requireActivePlatformAdminWithMfa } from "@/lib/authorization/platform-admin";
 import { createServiceRoleClient } from "@/lib/database/admin";
 import { createSupabaseServerClient } from "@/lib/database/server";
 import {
@@ -57,7 +57,7 @@ function optionalTimestamp(value?: string) {
 }
 
 export async function getOrganizationSubscription(organizationId: string) {
-  await requirePlatformAdmin();
+  await requireActivePlatformAdminWithMfa();
   const privileged = createServiceRoleClient();
   const { data, error } = await privileged
     .from("organization_subscriptions")
@@ -79,7 +79,7 @@ export async function getOrganizationSubscription(organizationId: string) {
 }
 
 export async function getOrganizationSubscriptionHistory(organizationId: string) {
-  await requirePlatformAdmin();
+  await requireActivePlatformAdminWithMfa();
   const privileged = createServiceRoleClient();
   const { data, error } = await privileged
     .from("organization_subscription_events")
@@ -108,7 +108,7 @@ export async function setOrganizationSubscriptionAction(
   const organizationId = String(formData.get("organizationId") ?? "");
 
   try {
-    await requirePlatformAdmin();
+    await requireActivePlatformAdminWithMfa();
     const parsed = setOrganizationSubscriptionSchema.safeParse({
       organizationId,
       plan: formData.get("plan"),

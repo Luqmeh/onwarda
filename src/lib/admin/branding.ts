@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 
 import { adminClientPath } from "@/config/admin";
-import { requirePlatformAdmin } from "@/lib/authorization/platform-admin";
+import { requireActivePlatformAdminWithMfa } from "@/lib/authorization/platform-admin";
 import {
   brandingLogoPath,
   brandingOrganizationIdFromLogoPath,
@@ -90,7 +90,7 @@ function hasBrandingInput(formData: FormData) {
 export async function getAdminOrganizationBranding(
   organizationId: string,
 ): Promise<ResolvedOrganizationBranding> {
-  await requirePlatformAdmin();
+  await requireActivePlatformAdminWithMfa();
 
   const parsedId = uuidSchema.safeParse(organizationId);
 
@@ -143,7 +143,7 @@ export async function updateAdminOrganizationBranding(input: {
   secondaryColor: string | null;
   accentColor: string | null;
 }) {
-  await requirePlatformAdmin();
+  await requireActivePlatformAdminWithMfa();
 
   const parsedId = uuidSchema.safeParse(input.organizationId);
 
@@ -181,7 +181,7 @@ async function replaceAdminOrganizationLogo(
   organizationId: string,
   file: File,
 ) {
-  await requirePlatformAdmin();
+  await requireActivePlatformAdminWithMfa();
 
   const parsedId = uuidSchema.safeParse(organizationId);
 
@@ -238,7 +238,7 @@ async function replaceAdminOrganizationLogo(
 }
 
 export async function removeAdminOrganizationLogo(organizationId: string) {
-  await requirePlatformAdmin();
+  await requireActivePlatformAdminWithMfa();
 
   const parsedId = uuidSchema.safeParse(organizationId);
 
@@ -304,7 +304,7 @@ export async function updateAdminOrganizationBrandingAction(
   formData: FormData,
 ): Promise<AdminBrandingMutationState> {
   try {
-    await requirePlatformAdmin();
+    await requireActivePlatformAdminWithMfa();
     const fields = parseBrandingFields(formData);
     await updateAdminOrganizationBranding({
       organizationId,

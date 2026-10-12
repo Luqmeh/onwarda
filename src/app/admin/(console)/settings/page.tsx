@@ -1,13 +1,13 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getPublicEnv } from "@/config/env";
-import { requirePlatformAdmin } from "@/lib/authorization/platform-admin";
+import { requireActivePlatformAdminWithMfa } from "@/lib/authorization/platform-admin";
 
 export const metadata = {
   title: "Settings",
 };
 
 export default async function AdminSettingsPage() {
-  const admin = await requirePlatformAdmin();
+  const admin = await requireActivePlatformAdminWithMfa();
   const env = getPublicEnv();
 
   return (
@@ -39,6 +39,26 @@ export default async function AdminSettingsPage() {
             <p className="text-muted-foreground">Status</p>
             <p className="font-medium capitalize">{admin.admin.status}</p>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Authenticator</CardTitle>
+          <CardDescription>
+            This account must verify a TOTP code before any privileged admin page or action runs.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm text-muted-foreground">
+          <p>
+            Use Google Authenticator, Microsoft Authenticator, or another compatible app. Keep
+            that device. Onwarda does not offer a public bypass or reset link.
+          </p>
+          <p>
+            If the authenticator is lost, a Supabase project owner can remove the factor from
+            the user in the Supabase Authentication dashboard, then this account can enroll again
+            after signing in.
+          </p>
         </CardContent>
       </Card>
 

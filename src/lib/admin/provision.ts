@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 
 import { adminClientPath } from "@/config/admin";
 import { authRedirectUrl } from "@/lib/url";
-import { requirePlatformAdmin } from "@/lib/authorization/platform-admin";
+import { requireActivePlatformAdminWithMfa } from "@/lib/authorization/platform-admin";
 import { createServiceRoleClient } from "@/lib/database/admin";
 import { createSupabaseServerClient } from "@/lib/database/server";
 import {
@@ -158,7 +158,7 @@ export async function provisionOrganization(input: {
   status?: string;
   ownerEmail: string;
 }): Promise<ProvisionOrganizationResult> {
-  await requirePlatformAdmin();
+  await requireActivePlatformAdminWithMfa();
 
   const parsed = provisionOrganizationSchema.safeParse(input);
 
@@ -310,7 +310,7 @@ export async function setOrganizationStatus(input: {
   status: "active" | "suspended";
   confirm?: string;
 }) {
-  await requirePlatformAdmin();
+  await requireActivePlatformAdminWithMfa();
 
   const parsed = organizationStatusMutationSchema.safeParse(input);
 

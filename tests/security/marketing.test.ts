@@ -52,7 +52,7 @@ describe("marketing website isolation", () => {
     );
     const guest = readFileSync(join(process.cwd(), "src/app/g/[token]/page.tsx"), "utf8");
 
-    expect(admin).toContain("requirePlatformAdmin");
+    expect(admin).toContain("getPlatformAdminMfaGate");
     expect(workspace).toContain("getWorkspaceDashboard");
     expect(property).toContain("loadPublicPropertyShowcase");
     expect(guest).toContain("loadGuestStayOrMark");

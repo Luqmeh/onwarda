@@ -5,7 +5,28 @@ export const ADMIN_ROUTES = {
   clientNew: "/admin/clients/new",
   activity: "/admin/activity",
   settings: "/admin/settings",
+  mfaSetup: "/admin/security/mfa-setup",
+  mfaChallenge: "/admin/security/mfa-challenge",
 } as const;
+
+export function safeAdminPath(value: string | undefined) {
+  if (
+    !value ||
+    !value.startsWith("/admin") ||
+    value.startsWith("//") ||
+    value.includes("\\") ||
+    value.includes("://") ||
+    value.includes("..")
+  ) {
+    return ADMIN_ROUTES.root;
+  }
+
+  if (value.startsWith("/admin/login") || value.startsWith("/admin/security")) {
+    return ADMIN_ROUTES.root;
+  }
+
+  return value;
+}
 
 export const ADMIN_CLIENT_PAGE_SIZE = 20;
 

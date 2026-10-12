@@ -2,6 +2,8 @@
 
 import { redirect } from "next/navigation";
 
+import { ADMIN_ROUTES, safeAdminPath } from "@/config/admin";
+import { getPlatformAdminMfaGate } from "@/lib/authorization/platform-admin";
 import { createSupabaseServerClient } from "@/lib/database/server";
 import { safeInternalPath } from "@/lib/auth/safe-path";
 import { emailSchema } from "@/lib/validation/common";
@@ -64,6 +66,24 @@ export async function signInAction(
       await supabase.auth.signOut();
       return { error: "Platform administrator access is required." };
     }
+
+    const gate = await getPlatformAdminMfaGate();
+    const next = safeAdminPath(destination);
+
+    if (gate.status === "enroll") {
+      redirect(`${ADMIN_ROUTES.mfaSetup}?next=${encodeURIComponent(next)}`);
+    }
+
+    if (gate.status === "challenge") {
+      redirect(`${ADMIN_ROUTES.mfaChallenge}?next=${encodeURIComponent(next)}`);
+    }
+
+    if (gate.status !== "ready") {
+      await supabase.auth.signOut();
+      return { error: "Platform administrator access is required." };
+    }
+
+    redirect(next);
   }
 
   redirect(destination);

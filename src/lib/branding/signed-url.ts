@@ -1,6 +1,6 @@
 import "server-only";
 
-import { requirePlatformAdmin } from "@/lib/authorization/platform-admin";
+import { requireActivePlatformAdminWithMfa } from "@/lib/authorization/platform-admin";
 import { createServiceRoleClient } from "@/lib/database/admin";
 import { createSupabaseServerClient } from "@/lib/database/server";
 import {
@@ -32,7 +32,7 @@ export async function createAdminBrandingLogoSignedUrl(
   organizationId: string,
   path: string,
 ) {
-  await requirePlatformAdmin();
+  await requireActivePlatformAdminWithMfa();
 
   if (!isBrandingLogoPath(path)) {
     return null;

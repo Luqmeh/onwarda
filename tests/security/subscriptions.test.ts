@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthorizationError } from "@/lib/errors";
 
 vi.mock("@/lib/authorization/platform-admin", () => ({
-  requirePlatformAdmin: vi.fn(),
+  requireActivePlatformAdminWithMfa: vi.fn(),
 }));
 
 vi.mock("@/lib/database/admin", () => ({
@@ -18,7 +18,7 @@ vi.mock("@/lib/database/server", () => ({
   createSupabaseServerClient: vi.fn(),
 }));
 
-import { requirePlatformAdmin } from "@/lib/authorization/platform-admin";
+import { requireActivePlatformAdminWithMfa } from "@/lib/authorization/platform-admin";
 import { createServiceRoleClient } from "@/lib/database/admin";
 import {
   getOrganizationSubscription,
@@ -31,7 +31,7 @@ describe("subscription administration", () => {
   });
 
   it("requires a platform admin before reading or changing a subscription", async () => {
-    vi.mocked(requirePlatformAdmin).mockRejectedValue(new AuthorizationError());
+    vi.mocked(requireActivePlatformAdminWithMfa).mockRejectedValue(new AuthorizationError());
 
     await expect(getOrganizationSubscription(randomUUID())).rejects.toBeInstanceOf(
       AuthorizationError,
@@ -58,7 +58,7 @@ describe("subscription administration", () => {
       "utf8",
     );
 
-    expect(source).toContain("await requirePlatformAdmin()");
+    expect(source).toContain("await requireActivePlatformAdminWithMfa()");
     expect(source).toContain('rpc("admin_set_organization_subscription"');
     expect(settings).not.toContain("setOrganizationSubscriptionAction");
     expect(settings).not.toContain("admin_set_organization_subscription");

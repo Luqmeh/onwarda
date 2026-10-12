@@ -2,7 +2,7 @@ import "server-only";
 
 import { z } from "zod";
 
-import { requirePlatformAdmin } from "@/lib/authorization/platform-admin";
+import { requireActivePlatformAdminWithMfa } from "@/lib/authorization/platform-admin";
 import { createServiceRoleClient } from "@/lib/database/admin";
 import { createSupabaseServerClient } from "@/lib/database/server";
 import { AppError, NotFoundError, ValidationError } from "@/lib/errors";
@@ -135,7 +135,7 @@ async function loadPreviewPayload(
 export async function getOrganizationDeletionPreview(
   organizationId: string,
 ): Promise<OrganizationDeletionPreview> {
-  await requirePlatformAdmin();
+  await requireActivePlatformAdminWithMfa();
   const privileged = createServiceRoleClient();
   const payload = await loadPreviewPayload(privileged, organizationId);
 
@@ -453,7 +453,7 @@ export async function permanentlyDeleteOrganization(input: {
   confirmation: string;
   acknowledge: boolean;
 }): Promise<DeletionActionState | { status: "complete" }> {
-  const admin = await requirePlatformAdmin();
+  const admin = await requireActivePlatformAdminWithMfa();
   const parsed = deletionRequestSchema.safeParse(input);
 
   if (!parsed.success) {
@@ -523,7 +523,7 @@ export async function permanentlyDeleteOrganization(input: {
 }
 
 export async function retryOrganizationDeletion(jobId: string) {
-  const admin = await requirePlatformAdmin();
+  const admin = await requireActivePlatformAdminWithMfa();
   const parsedId = uuidSchema.safeParse(jobId);
 
   if (!parsedId.success) {
@@ -547,7 +547,7 @@ export async function retryOrganizationDeletion(jobId: string) {
 }
 
 export async function listIncompleteDeletionJobs() {
-  await requirePlatformAdmin();
+  await requireActivePlatformAdminWithMfa();
   const privileged = createServiceRoleClient();
   const { data, error } = await privileged
     .from("platform_deletion_jobs")
@@ -563,7 +563,7 @@ export async function listIncompleteDeletionJobs() {
 }
 
 export async function getOpenDeletionJob(organizationId: string) {
-  await requirePlatformAdmin();
+  await requireActivePlatformAdminWithMfa();
   const privileged = createServiceRoleClient();
   return findOpenJob(privileged, organizationId);
 }

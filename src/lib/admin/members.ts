@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 
 import { adminClientPath } from "@/config/admin";
 import { authRedirectUrl } from "@/lib/url";
-import { requirePlatformAdmin } from "@/lib/authorization/platform-admin";
+import { requireActivePlatformAdminWithMfa } from "@/lib/authorization/platform-admin";
 import { createServiceRoleClient } from "@/lib/database/admin";
 import { createSupabaseServerClient } from "@/lib/database/server";
 import {
@@ -163,7 +163,7 @@ export async function inviteOrganizationUser(input: {
   email: string;
   role: "admin" | "manager" | "staff";
 }) {
-  await requirePlatformAdmin();
+  await requireActivePlatformAdminWithMfa();
 
   const parsed = inviteOrganizationUserSchema.safeParse(input);
 
@@ -234,7 +234,7 @@ export async function setOrganizationUserRole(input: {
   userId: string;
   role: "admin" | "manager" | "staff";
 }) {
-  await requirePlatformAdmin();
+  await requireActivePlatformAdminWithMfa();
 
   const parsed = setOrganizationUserRoleSchema.safeParse(input);
 
@@ -259,7 +259,7 @@ export async function setOrganizationUserStatus(input: {
   userId: string;
   status: "active" | "suspended";
 }) {
-  await requirePlatformAdmin();
+  await requireActivePlatformAdminWithMfa();
 
   const parsed = setOrganizationUserStatusSchema.safeParse(input);
 
@@ -284,7 +284,7 @@ export async function transferOrganizationOwnership(input: {
   userId: string;
   confirm?: string;
 }) {
-  await requirePlatformAdmin();
+  await requireActivePlatformAdminWithMfa();
 
   const parsed = transferOrganizationOwnershipSchema.safeParse(input);
 

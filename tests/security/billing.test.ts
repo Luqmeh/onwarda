@@ -19,7 +19,7 @@ vi.mock("@/lib/database/server", () => ({
 }));
 
 vi.mock("@/lib/authorization/platform-admin", () => ({
-  requirePlatformAdmin: vi.fn(),
+  requireActivePlatformAdminWithMfa: vi.fn(),
 }));
 
 vi.mock("@/lib/database/admin", () => ({
@@ -35,7 +35,7 @@ vi.mock("next/navigation", () => ({
 import { requireOrganizationRole } from "@/lib/tenancy/context";
 import { requireWorkspaceView } from "@/lib/tenancy/workspace-access";
 import { createSupabaseServerClient } from "@/lib/database/server";
-import { requirePlatformAdmin } from "@/lib/authorization/platform-admin";
+import { requireActivePlatformAdminWithMfa } from "@/lib/authorization/platform-admin";
 import {
   getWorkspaceBillingSnapshot,
   requestPlanChange,
@@ -185,7 +185,7 @@ describe("billing access isolation", () => {
   });
 
   it("lets a platform admin perform an authorized manual action", async () => {
-    vi.mocked(requirePlatformAdmin).mockResolvedValue({ user: { id: randomUUID() } } as never);
+    vi.mocked(requireActivePlatformAdminWithMfa).mockResolvedValue({ user: { id: randomUUID() } } as never);
     const rpc = vi.fn().mockResolvedValue({ error: null });
     vi.mocked(createSupabaseServerClient).mockResolvedValue({ rpc } as never);
 
@@ -204,7 +204,7 @@ describe("billing access isolation", () => {
       ),
     ).rejects.toThrow();
 
-    expect(requirePlatformAdmin).toHaveBeenCalled();
+    expect(requireActivePlatformAdminWithMfa).toHaveBeenCalled();
     expect(rpc).toHaveBeenCalledWith(
       "admin_set_organization_subscription",
       expect.objectContaining({

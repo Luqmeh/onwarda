@@ -2,7 +2,7 @@ import "server-only";
 
 import { ADMIN_CLIENT_PAGE_SIZE } from "@/config/admin";
 import { AppError, NotFoundError } from "@/lib/errors";
-import { requirePlatformAdmin } from "@/lib/authorization/platform-admin";
+import { requireActivePlatformAdminWithMfa } from "@/lib/authorization/platform-admin";
 import { createServiceRoleClient } from "@/lib/database/admin";
 import { createSupabaseServerClient } from "@/lib/database/server";
 import { sanitizeOrganizationSearch } from "@/lib/validation/organization";
@@ -114,7 +114,7 @@ export async function listAdminOrganizations(options: {
   status?: string;
   page?: number;
 }): Promise<AdminOrganizationList> {
-  await requirePlatformAdmin();
+  await requireActivePlatformAdminWithMfa();
 
   const query = sanitizeOrganizationSearch(options.query ?? "");
   const status =
@@ -168,7 +168,7 @@ export async function listAdminOrganizations(options: {
 export async function getAdminOrganization(
   organizationId: string,
 ): Promise<AdminOrganizationDetail> {
-  await requirePlatformAdmin();
+  await requireActivePlatformAdminWithMfa();
   const privileged = createServiceRoleClient();
   const scoped = await createSupabaseServerClient();
 

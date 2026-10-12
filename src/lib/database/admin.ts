@@ -6,11 +6,11 @@ import { getServerEnv } from "@/config/env.server";
 
 /**
  * Service-role access bypasses RLS. Use it only for:
- * - platform-admin aggregate metrics and client directory, only after requirePlatformAdmin()
+ * - platform-admin aggregate metrics and client directory, only after requireActivePlatformAdminWithMfa()
  * - Auth Admin invitation/lookup during provisioning (GoTrue has no user-scoped invite API)
  * - guest token hash lookup
  * - private signed URLs
- * - platform-admin client deletion after requirePlatformAdmin()
+ * - platform-admin client deletion after requireActivePlatformAdminWithMfa()
  *
  * Organization inserts and status changes go through SECURITY DEFINER RPCs that
  * check is_active_platform_admin(). Do not insert tenant rows with this client.

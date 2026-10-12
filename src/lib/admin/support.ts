@@ -8,7 +8,7 @@ import {
   SUPPORT_SESSION_DURATION_MINUTES,
   adminClientPath,
 } from "@/config/admin";
-import { requirePlatformAdmin } from "@/lib/authorization/platform-admin";
+import { requireActivePlatformAdminWithMfa } from "@/lib/authorization/platform-admin";
 import { createServiceRoleClient } from "@/lib/database/admin";
 import { createSupabaseServerClient } from "@/lib/database/server";
 import {
@@ -99,7 +99,7 @@ async function clearSupportCookie() {
 }
 
 export async function getActiveSupportSession(): Promise<ActiveSupportSession | null> {
-  const admin = await requirePlatformAdmin();
+  const admin = await requireActivePlatformAdminWithMfa();
   const store = await cookies();
   const sessionId = store.get(SUPPORT_SESSION_COOKIE)?.value;
 
@@ -149,7 +149,7 @@ export async function startSupportSession(input: {
   reason: string;
   confirm?: string;
 }) {
-  const admin = await requirePlatformAdmin();
+  const admin = await requireActivePlatformAdminWithMfa();
   const parsed = startSupportSessionSchema.safeParse(input);
 
   if (!parsed.success) {
@@ -198,7 +198,7 @@ export async function startSupportSession(input: {
 }
 
 export async function endSupportSession(sessionId?: string) {
-  await requirePlatformAdmin();
+  await requireActivePlatformAdminWithMfa();
   const store = await cookies();
   const id = sessionId || store.get(SUPPORT_SESSION_COOKIE)?.value;
 

@@ -3,10 +3,17 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { getPublicEnv } from "@/config/env";
 
-export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({
-    request,
+function continueWithPath(request: NextRequest) {
+  const headers = new Headers(request.headers);
+  headers.set("x-onwarda-pathname", request.nextUrl.pathname);
+
+  return NextResponse.next({
+    request: { headers },
   });
+}
+
+export async function updateSession(request: NextRequest) {
+  let response = continueWithPath(request);
 
   const env = getPublicEnv();
 
@@ -23,7 +30,7 @@ export async function updateSession(request: NextRequest) {
             request.cookies.set(name, value);
           });
 
-          response = NextResponse.next({ request });
+          response = continueWithPath(request);
 
           cookiesToSet.forEach(({ name, value, options }) => {
             response.cookies.set(name, value, options);

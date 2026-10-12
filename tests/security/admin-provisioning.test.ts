@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthorizationError, ValidationError } from "@/lib/errors";
 
 vi.mock("@/lib/authorization/platform-admin", () => ({
-  requirePlatformAdmin: vi.fn(),
+  requireActivePlatformAdminWithMfa: vi.fn(),
 }));
 
 vi.mock("@/lib/database/admin", () => ({
@@ -18,7 +18,7 @@ vi.mock("@/lib/database/server", () => ({
   createSupabaseServerClient: vi.fn(),
 }));
 
-import { requirePlatformAdmin } from "@/lib/authorization/platform-admin";
+import { requireActivePlatformAdminWithMfa } from "@/lib/authorization/platform-admin";
 import { createServiceRoleClient } from "@/lib/database/admin";
 import { createSupabaseServerClient } from "@/lib/database/server";
 import { provisionOrganization, setOrganizationStatus } from "@/lib/admin/provision";
@@ -53,7 +53,7 @@ describe("admin provisioning authorization", () => {
   });
 
   it("does not let a non-admin create an organization", async () => {
-    vi.mocked(requirePlatformAdmin).mockRejectedValue(new AuthorizationError());
+    vi.mocked(requireActivePlatformAdminWithMfa).mockRejectedValue(new AuthorizationError());
 
     await expect(
       provisionOrganization({
@@ -68,7 +68,7 @@ describe("admin provisioning authorization", () => {
   });
 
   it("does not let a non-admin change organization status", async () => {
-    vi.mocked(requirePlatformAdmin).mockRejectedValue(new AuthorizationError());
+    vi.mocked(requireActivePlatformAdminWithMfa).mockRejectedValue(new AuthorizationError());
 
     await expect(
       setOrganizationStatus({
@@ -82,7 +82,7 @@ describe("admin provisioning authorization", () => {
   });
 
   it("does not let a non-admin invite an organization owner", async () => {
-    vi.mocked(requirePlatformAdmin).mockRejectedValue(new AuthorizationError());
+    vi.mocked(requireActivePlatformAdminWithMfa).mockRejectedValue(new AuthorizationError());
 
     await expect(
       provisionOrganization({
@@ -94,7 +94,7 @@ describe("admin provisioning authorization", () => {
   });
 
   it("does not let a non-admin read organization admin detail even with a valid UUID", async () => {
-    vi.mocked(requirePlatformAdmin).mockRejectedValue(new AuthorizationError());
+    vi.mocked(requireActivePlatformAdminWithMfa).mockRejectedValue(new AuthorizationError());
 
     await expect(getAdminOrganization(randomUUID())).rejects.toBeInstanceOf(
       AuthorizationError,
@@ -103,7 +103,7 @@ describe("admin provisioning authorization", () => {
   });
 
   it("does not treat an organization UUID as authorization", async () => {
-    vi.mocked(requirePlatformAdmin).mockRejectedValue(new AuthorizationError());
+    vi.mocked(requireActivePlatformAdminWithMfa).mockRejectedValue(new AuthorizationError());
 
     await expect(
       setOrganizationStatus({
@@ -121,7 +121,7 @@ describe("admin provisioning workflow", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(requirePlatformAdmin).mockResolvedValue(adminContext as never);
+    vi.mocked(requireActivePlatformAdminWithMfa).mockResolvedValue(adminContext as never);
     inviteUserByEmail.mockResolvedValue({
       data: { user: { id: "invited-user" } },
       error: null,
@@ -263,7 +263,7 @@ describe("admin provisioning source controls", () => {
     const workflow = provision.slice(
       provision.indexOf("export async function provisionOrganization("),
     );
-    const requireIndex = workflow.indexOf("await requirePlatformAdmin()");
+    const requireIndex = workflow.indexOf("await requireActivePlatformAdminWithMfa()");
     const inviteIndex = workflow.indexOf("inviteOwner(");
     const rpcIndex = workflow.indexOf('rpc("provision_organization"');
 

@@ -167,6 +167,18 @@ describe("admin data loaders", () => {
       email: "admin@onwarda.com",
     });
     vi.mocked(createSupabaseServerClient).mockResolvedValue({
+      auth: {
+        mfa: {
+          getAuthenticatorAssuranceLevel: vi.fn(async () => ({
+            data: { currentLevel: "aal2", nextLevel: "aal2" },
+            error: null,
+          })),
+          listFactors: vi.fn(async () => ({
+            data: { totp: [{ id: "factor-1", status: "verified" }] },
+            error: null,
+          })),
+        },
+      },
       from: vi.fn((table: string) => {
         if (table === "platform_admins") {
           return createBuilder({
@@ -221,7 +233,7 @@ describe("admin source isolation", () => {
     const guestPage = readFileSync(join(root, "app/g/[token]/page.tsx"), "utf8");
     const slugPage = readFileSync(join(root, "app/o/[slug]/page.tsx"), "utf8");
 
-    expect(adminLayout).toContain("requirePlatformAdmin");
+    expect(adminLayout).toContain("getPlatformAdminMfaGate");
     expect(adminLayout).not.toContain("requireCurrentOrganization");
     expect(appLayout).toContain("requireCurrentOrganization");
     expect(appLayout).not.toContain("requirePlatformAdmin");
@@ -233,7 +245,7 @@ describe("admin source isolation", () => {
 
   it("loads dashboard metrics only after requirePlatformAdmin and without tenant row dumps", () => {
     const dashboard = readFileSync(join(root, "lib/admin/dashboard.ts"), "utf8");
-    const requireIndex = dashboard.indexOf("await requirePlatformAdmin()");
+    const requireIndex = dashboard.indexOf("await requireActivePlatformAdminWithMfa()");
     const serviceIndex = dashboard.indexOf("createServiceRoleClient()");
 
     expect(requireIndex).toBeGreaterThan(-1);

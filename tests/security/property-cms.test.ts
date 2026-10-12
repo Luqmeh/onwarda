@@ -61,7 +61,7 @@ describe("property CMS authorization", () => {
     expect(actions).not.toContain("requirePlatformAdmin");
     expect(actions).not.toContain('formData.get("organizationId")');
     expect(page).toContain("getWorkspaceProperty");
-    expect(page).toContain("Property CMS");
+    expect(page).toContain("messages.screens.propertyCms");
     expect(page).toContain("canManagePropertyCms");
   });
 });

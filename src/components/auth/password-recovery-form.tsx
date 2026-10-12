@@ -180,7 +180,7 @@ export function PasswordRecoveryForm({ audience }: { audience: PasswordAudience 
           {audience === "admin" ? messages.auth.adminPasswordUpdated : messages.auth.clientPasswordUpdated}
         </p>
         <Button asChild className="w-full">
-          <Link href={loginPath}>Sign in</Link>
+          <Link href={loginPath}>{messages.auth.signIn}</Link>
         </Button>
       </div>
     );

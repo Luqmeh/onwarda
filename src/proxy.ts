@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 
+import { ADMIN_ROUTES } from "@/config/admin";
 import {
   ADMIN_PREFIX,
   CLIENT_WORKSPACE_PREFIX,
@@ -21,10 +22,12 @@ export async function proxy(request: NextRequest) {
   const { response, user } = await updateSession(request);
   const { pathname } = request.nextUrl;
   const isAdminLogin = pathname === `${ADMIN_PREFIX}/login`;
+  const isAdminAccept = pathname === ADMIN_ROUTES.accept;
 
-  if (isAdminPath(pathname) && !isAdminLogin && !user) {
+  if (isAdminPath(pathname) && !isAdminLogin && !isAdminAccept && !user) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = `${ADMIN_PREFIX}/login`;
+    loginUrl.search = "";
     loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);
   }

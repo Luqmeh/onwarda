@@ -14,6 +14,7 @@ describe("admin navigation", () => {
       settings: "/admin/settings",
       mfaSetup: "/admin/security/mfa-setup",
       mfaChallenge: "/admin/security/mfa-challenge",
+      accept: "/admin/accept",
     });
   });
 

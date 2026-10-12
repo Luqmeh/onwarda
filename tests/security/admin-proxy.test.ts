@@ -45,6 +45,87 @@ describe("admin proxy authentication", () => {
     expect(response.headers.get("location")).toBeNull();
   });
 
+  it("leaves /admin/accept reachable before a session exists and preserves the invite query", async () => {
+    const passthrough = NextResponse.next();
+    vi.mocked(updateSession).mockResolvedValue({
+      response: passthrough,
+      user: null,
+    });
+
+    const response = await proxy(
+      requestFor("/admin/accept?token_hash=invite-token-hash&type=invite"),
+    );
+
+    expect(response).toBe(passthrough);
+    expect(response.headers.get("location")).toBeNull();
+  });
+
+  it("leaves /admin/accept reachable for a recovery link and does not copy the token", async () => {
+    const passthrough = NextResponse.next();
+    vi.mocked(updateSession).mockResolvedValue({
+      response: passthrough,
+      user: null,
+    });
+
+    const response = await proxy(
+      requestFor("/admin/accept?token_hash=recovery-token-hash&type=recovery"),
+    );
+
+    expect(response).toBe(passthrough);
+    expect(response.headers.get("location")).toBeNull();
+
+    const protectedResponse = await proxy(
+      requestFor("/admin/clients?token_hash=recovery-token-hash&type=recovery"),
+    );
+    const location = protectedResponse.headers.get("location") ?? "";
+
+    expect(protectedResponse.status).toBe(307);
+    expect(location).not.toContain("recovery-token-hash");
+  });
+
+  it("still protects other admin routes and does not copy invite secrets into the login redirect", async () => {
+    const passthrough = NextResponse.next();
+    vi.mocked(updateSession).mockResolvedValue({
+      response: passthrough,
+      user: null,
+    });
+
+    const response = await proxy(requestFor("/admin/clients?token_hash=invite-token-hash"));
+    const location = response.headers.get("location") ?? "";
+
+    expect(response.status).toBe(307);
+    expect(new URL(location, "http://localhost:3000").pathname).toBe("/admin/login");
+    expect(location).not.toContain("invite-token-hash");
+  });
+
+  it("does not send an existing session away from /admin/accept", async () => {
+    const passthrough = NextResponse.next();
+    vi.mocked(updateSession).mockResolvedValue({
+      response: passthrough,
+      user: { id: "admin-user" } as never,
+    });
+
+    const response = await proxy(requestFor("/admin/accept"));
+
+    expect(response).toBe(passthrough);
+    expect(response.headers.get("location")).toBeNull();
+  });
+
+  it("does not exempt a nested path under /admin/accept", async () => {
+    const passthrough = NextResponse.next();
+    vi.mocked(updateSession).mockResolvedValue({
+      response: passthrough,
+      user: null,
+    });
+
+    const response = await proxy(requestFor("/admin/accept/extra"));
+
+    expect(response.status).toBe(307);
+    expect(new URL(response.headers.get("location") ?? "", "http://localhost:3000").pathname).toBe(
+      "/admin/login",
+    );
+  });
+
   it("redirects an authenticated visitor away from /admin/login toward /admin", async () => {
     const passthrough = NextResponse.next();
     vi.mocked(updateSession).mockResolvedValue({

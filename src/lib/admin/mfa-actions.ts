@@ -40,13 +40,28 @@ export async function startAdminTotpEnrollment(): Promise<
       return { error: "The authenticator setup could not be started." };
     }
 
-    if ((factors?.totp ?? []).some((factor) => factor.status === "verified")) {
+    const listed = factors?.all ?? [];
+    const verifiedTotp = listed.some(
+      (factor) => factor.factor_type === "totp" && factor.status === "verified",
+    );
+
+    if (verifiedTotp) {
       return { error: "An authenticator is already enrolled. Enter a code to continue." };
     }
 
-    for (const factor of factors?.totp ?? []) {
-      if (factor.status !== "verified") {
-        await supabase.auth.mfa.unenroll({ factorId: factor.id });
+    for (const factor of listed) {
+      if (factor.factor_type !== "totp" || factor.status === "verified") {
+        continue;
+      }
+
+      const { error: unenrollError } = await supabase.auth.mfa.unenroll({
+        factorId: factor.id,
+      });
+
+      if (unenrollError) {
+        return {
+          error: "The previous authenticator setup could not be cleared. No new code was created.",
+        };
       }
     }
 

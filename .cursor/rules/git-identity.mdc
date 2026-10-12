@@ -1,0 +1,22 @@
+---
+description: Use the Onwarda repository Git identity and the pre-push author guard.
+alwaysApply: true
+---
+
+# Onwarda Git identity
+
+Use the repository-configured identity `Luqmeh <93534158+Luqmeh@users.noreply.github.com>`.
+
+Before creating a commit, verify the effective author and committer with `git var GIT_AUTHOR_IDENT` and `git var GIT_COMMITTER_IDENT`. Both must use that email.
+
+Do not intentionally author commits as `metal` or any other unrecognized identity.
+
+Do not override the configured identity with `git -c user.name`, `git -c user.email`, `--author`, or `GIT_AUTHOR_*` / `GIT_COMMITTER_*` environment variables.
+
+After each new commit, verify its author with `git show -s --format='%an <%ae>' HEAD` before pushing.
+
+Do not bypass a Git push guard with `--no-verify`.
+
+In a fresh checkout, if `git config --get core.hooksPath` is empty, set it to `.githooks` so `.githooks/pre-push` rejects outgoing commits whose author email is not `93534158+Luqmeh@users.noreply.github.com`.
+
+Preserve unrelated local changes. Do not rewrite published history without explicit approval.

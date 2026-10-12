@@ -29,18 +29,11 @@ import {
 } from "@/config/client";
 import { NotFoundError } from "@/lib/errors";
 import {
-  HOUSE_RULE_LABELS,
-  HOUSE_RULE_STATE_LABELS,
-  PROPERTY_AMENITY_LABELS,
-  PROPERTY_CONTENT_FIELD_META,
-  PROPERTY_CONTENT_LANGUAGE_LABELS,
-  PROPERTY_TYPE_LABELS,
   contentFieldsForGroup,
-  type HouseRuleKey,
-  type PropertyAmenity,
-  type PropertyContentLanguage,
-  type PropertyType,
 } from "@/lib/property-cms/catalog";
+import { getRequestI18n } from "@/i18n/get-locale";
+import { clientMetadata } from "@/i18n/page-title";
+import { formattingLocale } from "@/i18n/locale";
 import { requireWorkspaceView } from "@/lib/tenancy/workspace-access";
 import { getWorkspaceProperty } from "@/lib/workspace/data";
 import {
@@ -52,12 +45,48 @@ import {
   statusTone,
 } from "@/lib/workspace/format";
 
-export const metadata = {
-  title: "Property CMS",
-};
+export async function generateMetadata() {
+  return clientMetadata((messages) => ({ title: messages.titles.property }));
+}
 
 function contentMap(content: Array<{ fieldKey: string; body: string; visibility: string }>) {
   return new Map(content.map((field) => [field.fieldKey, field]));
+}
+
+function contentFieldLabel(
+  field: string,
+  catalog: {
+    neighborhood: string;
+    nearbyAttractions: string;
+    transportation: string;
+    localInformation: string;
+    arrivalInstructions: string;
+    parkingInstructions: string;
+    buildingEntry: string;
+    keyRetrieval: string;
+    lockbox: string;
+    smartLock: string;
+    reception: string;
+    contactInformation: string;
+    internalNotes: string;
+  },
+) {
+  const labels: Record<string, string> = {
+    neighborhood: catalog.neighborhood,
+    nearby_attractions: catalog.nearbyAttractions,
+    transportation: catalog.transportation,
+    local_information: catalog.localInformation,
+    arrival_instructions: catalog.arrivalInstructions,
+    parking_instructions: catalog.parkingInstructions,
+    building_entry: catalog.buildingEntry,
+    key_retrieval: catalog.keyRetrieval,
+    lockbox_instructions: catalog.lockbox,
+    smart_lock_instructions: catalog.smartLock,
+    reception_instructions: catalog.reception,
+    contact_information: catalog.contactInformation,
+    private_notes: catalog.internalNotes,
+  };
+  return labels[field] ?? field;
 }
 
 export default async function ClientPropertyDetailPage({
@@ -66,7 +95,11 @@ export default async function ClientPropertyDetailPage({
   params: Promise<{ propertyId: string }>;
 }) {
   const { propertyId } = await params;
-  const view = await requireWorkspaceView();
+  const [{ locale, messages }, view] = await Promise.all([
+    getRequestI18n(),
+    requireWorkspaceView(),
+  ]);
+  const dates = formattingLocale(locale);
 
   let property;
 
@@ -88,8 +121,8 @@ export default async function ClientPropertyDetailPage({
   const hero = property.media.find((item) => item.role === "hero" && item.signedUrl);
   const fields = contentMap(property.content);
   const typeLabel = property.propertyType
-    ? PROPERTY_TYPE_LABELS[property.propertyType as PropertyType]
-    : "Type not set";
+    ? messages.catalog[property.propertyType as keyof typeof messages.catalog]
+    : messages.screens.typeNotSet;
 
   return (
     <div className="space-y-6">
@@ -105,16 +138,29 @@ export default async function ClientPropertyDetailPage({
       ) : null}
 
       <ClientPageHeader
-        kicker="Property CMS"
+        kicker={messages.screens.propertyCms}
         title={property.name}
         description={
           [typeLabel, location, property.internalIdentifier ? `Internal: ${property.internalIdentifier}` : null]
             .filter(Boolean)
-            .join(" · ") || "Complete this home once. Later surfaces will reuse it."
+            .join(" · ") || messages.screens.completeHome
         }
         actions={
           <div className="flex flex-wrap gap-2">
-            <ClientStatusBadge label={property.status} tone={statusTone(property.status)} />
+            <ClientStatusBadge
+              label={
+                property.status === "draft"
+                  ? messages.screens.draft
+                  : property.status === "active"
+                    ? messages.screens.active
+                    : property.status === "inactive"
+                      ? messages.screens.inactive
+                      : property.status === "archived"
+                        ? messages.screens.archived
+                        : property.status
+              }
+              tone={statusTone(property.status)}
+            />
             {canCreateStay ? (
               <Button asChild>
                 <Link href={clientReservationCreatePath(property.id)}>Create reservation</Link>
@@ -134,24 +180,24 @@ export default async function ClientPropertyDetailPage({
         }
       />
 
-      <section aria-label="Property summary" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section aria-label={messages.screens.propertySummary} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <ClientMetricCard
-          label="Reservations"
+          label={messages.nav.reservations}
           value={property.reservationCount}
           href={CLIENT_ROUTES.reservations}
         />
-        <ClientMetricCard label="Guests who stayed" value={property.stayGuestCount} />
+        <ClientMetricCard label={messages.screens.guestsWhoStayed} value={property.stayGuestCount} />
         <ClientMetricCard
-          label="Open issues"
+          label={messages.copy.openIssues}
           value={property.openIssueCount}
           href={CLIENT_ROUTES.issues}
         />
-        <ClientMetricCard label="Instructions" value={property.knowledgeCount} />
+        <ClientMetricCard label={messages.screens.instructions} value={property.knowledgeCount} />
       </section>
 
       <CmsSection
-        title="Basic information"
-        description="Identity, location, capacity, and the languages this home can host."
+        title={messages.screens.basicInformation}
+        description={messages.screens.basicInformationHelp}
         canEdit={canEdit}
         summary={
           <dl className="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
@@ -186,19 +232,30 @@ export default async function ClientPropertyDetailPage({
               </dd>
             </div>
             <div>
-              <dt className="text-onwarda-muted">Check-in / checkout</dt>
+              <dt className="text-onwarda-muted">{messages.fields.checkIn} / {messages.fields.checkOut}</dt>
               <dd className="mt-1 font-medium">
                 {property.checkInTime ?? "—"} / {property.checkOutTime ?? "—"}
               </dd>
             </div>
             <div>
-              <dt className="text-onwarda-muted">Languages</dt>
+              <dt className="text-onwarda-muted">{messages.fields.supportedLanguages}</dt>
               <dd className="mt-1 font-medium">
                 {property.languages.length > 0
                   ? property.languages
-                      .map(
-                        (code) =>
-                          PROPERTY_CONTENT_LANGUAGE_LABELS[code as PropertyContentLanguage] ?? code,
+                      .map((code) =>
+                        code === "en"
+                          ? messages.languages.en
+                          : code === "fr"
+                            ? messages.languages.fr
+                            : code === "ar"
+                              ? messages.languages.ar
+                              : code === "es"
+                                ? messages.catalog.spanish
+                                : code === "de"
+                                  ? messages.catalog.german
+                                  : code === "it"
+                                    ? messages.catalog.italian
+                                    : code,
                       )
                       .join(", ")
                   : "—"}
@@ -233,18 +290,22 @@ export default async function ClientPropertyDetailPage({
       </CmsSection>
 
       <CmsSection
-        title="Amenities"
-        description="Structured facilities later public pages, guest notes, and search can reuse."
+        title={messages.screens.amenities}
+        description={messages.screens.amenitiesHelp}
         canEdit={canEdit}
         summary={
           property.amenities.length === 0 ? (
-            <p className="text-sm text-onwarda-muted">No amenities selected yet.</p>
+            <p className="text-sm text-onwarda-muted">{messages.screens.noAmenitiesYet}</p>
           ) : (
             <ul className="flex flex-wrap gap-2">
               {property.amenities.map((amenity) => (
                 <li key={amenity}>
                   <ClientStatusBadge
-                    label={PROPERTY_AMENITY_LABELS[amenity as PropertyAmenity] ?? amenity}
+                    label={
+                      amenity === "workspace"
+                        ? messages.catalog.amenityWorkspace
+                        : messages.catalog[amenity as keyof typeof messages.catalog] ?? amenity
+                    }
                     tone="sage"
                   />
                 </li>
@@ -257,23 +318,24 @@ export default async function ClientPropertyDetailPage({
       </CmsSection>
 
       <CmsSection
-        title="House rules"
-        description="Canonical rules. Guest Portal should consume these later instead of inventing its own."
+        title={messages.screens.houseRules}
+        description={messages.screens.houseRulesHelp}
         canEdit={canEdit}
         summary={
           property.houseRules.length === 0 ? (
-            <p className="text-sm text-onwarda-muted">No house rules saved yet.</p>
+            <p className="text-sm text-onwarda-muted">{messages.screens.noHouseRulesYet}</p>
           ) : (
             <ul className="divide-y">
               {property.houseRules.map((rule) => (
                 <li key={rule.ruleKey} className="flex flex-col gap-1 py-3 sm:flex-row sm:justify-between">
                   <div>
                     <p className="font-medium">
-                      {HOUSE_RULE_LABELS[rule.ruleKey as HouseRuleKey] ?? rule.ruleKey}
+                      {rule.ruleKey === "checkout"
+                        ? messages.catalog.checkout_rules
+                        : messages.catalog[rule.ruleKey as keyof typeof messages.catalog] ?? rule.ruleKey}
                     </p>
                     <p className="text-sm text-onwarda-muted">
-                      {HOUSE_RULE_STATE_LABELS[rule.state as keyof typeof HOUSE_RULE_STATE_LABELS] ??
-                        rule.state}
+                      {messages.catalog[rule.state as keyof typeof messages.catalog] ?? rule.state}
                       {rule.details ? ` · ${rule.details}` : ""}
                     </p>
                   </div>
@@ -288,18 +350,17 @@ export default async function ClientPropertyDetailPage({
       </CmsSection>
 
       <CmsSection
-        title="Arrival and access"
-        description="Sensitive access details stay guest-only or private. Public-safe loaders must never return lock codes."
+        title={messages.screens.arrivalAccess}
+        description={messages.screens.arrivalAccessHelp}
         canEdit={canEdit}
         summary={
           <dl className="space-y-4 text-sm">
             {contentFieldsForGroup("access").map((field) => {
               const current = fields.get(field);
-              const meta = PROPERTY_CONTENT_FIELD_META[field];
               return (
                 <div key={field}>
                   <dt className="flex items-center gap-2 text-onwarda-muted">
-                    {meta.label}
+                    {contentFieldLabel(field, messages.catalog)}
                     {current ? <VisibilityBadge visibility={current.visibility as "public" | "guest" | "private"} /> : null}
                   </dt>
                   <dd className="mt-1 whitespace-pre-wrap leading-relaxed">
@@ -315,18 +376,17 @@ export default async function ClientPropertyDetailPage({
       </CmsSection>
 
       <CmsSection
-        title="Property content"
-        description="Neighborhood, attractions, transport, and local context for later public pages."
+        title={messages.screens.propertyContent}
+        description={messages.screens.propertyContentHelp}
         canEdit={canEdit}
         summary={
           <dl className="space-y-4 text-sm">
             {contentFieldsForGroup("content").map((field) => {
               const current = fields.get(field);
-              const meta = PROPERTY_CONTENT_FIELD_META[field];
               return (
                 <div key={field}>
                   <dt className="flex items-center gap-2 text-onwarda-muted">
-                    {meta.label}
+                    {contentFieldLabel(field, messages.catalog)}
                     {current ? <VisibilityBadge visibility={current.visibility as "public" | "guest" | "private"} /> : null}
                   </dt>
                   <dd className="mt-1 whitespace-pre-wrap leading-relaxed">
@@ -342,12 +402,12 @@ export default async function ClientPropertyDetailPage({
       </CmsSection>
 
       <CmsSection
-        title="Internal notes"
-        description="Operator-private only. This field cannot be made public or guest-visible."
+        title={messages.screens.internalNotes}
+        description={messages.screens.internalNotesHelp}
         canEdit={canEdit}
         summary={
           <p className="whitespace-pre-wrap text-sm leading-relaxed">
-            {fields.get("private_notes")?.body ?? "No internal notes."}
+            {fields.get("private_notes")?.body ?? messages.screens.noInternalNotes}
           </p>
         }
       >
@@ -355,8 +415,8 @@ export default async function ClientPropertyDetailPage({
       </CmsSection>
 
       <ClientSectionCard
-        title="Instructions / knowledge"
-        description="The existing property knowledge system. Guest-visible published entries can feed the Guest Portal later."
+        title={messages.screens.instructions}
+        description={messages.screens.instructionsHelp}
       >
         <PropertyKnowledgeCms
           propertyId={property.id}
@@ -367,14 +427,14 @@ export default async function ClientPropertyDetailPage({
 
       <ClientSectionCard
         title="Media"
-        description="Hero image, gallery, and external video or 360° URLs. Files stay in the private property-media bucket."
+        description={messages.screens.mediaHelp}
       >
         <PropertyMediaCms propertyId={property.id} media={property.media} canEdit={canEdit} />
       </ClientSectionCard>
 
       <ClientSectionCard
-        title="Reservations"
-        description="Existing stay workflow. The CMS does not replace reservations."
+        title={messages.nav.reservations}
+        description={messages.screens.propertyReservationsHelp}
         action={
           <Link href={CLIENT_ROUTES.reservations} className="text-sm text-onwarda-olive hover:underline">
             View reservations
@@ -383,8 +443,8 @@ export default async function ClientPropertyDetailPage({
       >
         {property.reservations.length === 0 ? (
           <ClientEmptyState
-            title="No reservations yet."
-            description="When a stay is created for this property, it will appear here."
+            title={messages.screens.noReservationsYet}
+            description={messages.screens.propertyReservationsEmpty}
             action={
               canCreateStay ? (
                 <Button asChild>
@@ -404,7 +464,7 @@ export default async function ClientPropertyDetailPage({
                   <div>
                     <p className="font-medium">{guestDisplayName(reservation.guestName)}</p>
                     <p className="text-sm text-onwarda-muted">
-                      {formatDate(reservation.checkIn)} – {formatDate(reservation.checkOut)}
+                      {formatDate(reservation.checkIn, dates)} – {formatDate(reservation.checkOut, dates)}
                     </p>
                   </div>
                   <ClientStatusBadge
@@ -420,7 +480,7 @@ export default async function ClientPropertyDetailPage({
 
       <ClientSectionCard
         title="Issues"
-        description="Open items that belong to this property."
+        description={messages.screens.propertyIssuesHelp}
         action={
           <Link href={CLIENT_ROUTES.issues} className="text-sm text-onwarda-olive hover:underline">
             View issues

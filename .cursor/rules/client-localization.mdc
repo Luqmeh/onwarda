@@ -1,0 +1,26 @@
+---
+description: Localize client workspace UI in English, French, and Arabic. Keep the admin console English and left to right.
+alwaysApply: true
+---
+
+# Client workspace localization
+
+When a change shows UI in the client/operator workspace (`/app`, related client settings, billing, and client sign-in or password recovery), support `en`, `fr`, and `ar`.
+
+Use the existing dictionaries in `src/i18n/messages/en.ts`, `fr.ts`, and `ar.ts`, plus `getMessages`, `getRequestI18n`, and `useI18n`. Do not add another translation system or hardcode new UI copy in JSX.
+
+English is the source. Add the same keys to French and Arabic. French must be professional French for Moroccan hospitality operators. Arabic must be consistent Modern Standard Arabic. Do not leave a French or Arabic value empty, and do not fall back to English when a key is missing. Extend `tests/unit/i18n.test.ts` when keys change.
+
+Translate the whole interaction: headings, buttons, labels, placeholders, validation, errors, notifications, dialogs, tooltips, accessibility names, loading, and empty states.
+
+Arabic is RTL. Use logical CSS, keep mixed Arabic and Latin readable, and isolate emails, URLs, phone numbers, IDs, OTPs, and codes with `dir="ltr"` or `bdi`. Do not mirror logos or non-directional icons.
+
+Pass the selected locale into date, time, number, and currency formatters through `formattingLocale` (`en`, `fr-MA`, `ar-MA`). Keep the Gregorian calendar, business timezone, stored values, currency codes, sorting, and calculations.
+
+Do not translate stored names, notes, knowledge content, or identifiers.
+
+The internal admin console (`/admin`, including login, password recovery, MFA, invitation acceptance, and admin settings) stays English and `dir="ltr"`. Do not add a language selector there, and do not let `onwarda_locale` make admin RTL.
+
+Leave the public marketing site, guest portal (`/g`), and cleaner portal (`/cleaner`) unchanged unless the task explicitly includes them.
+
+Localization must not change authentication, MFA, authorization, tenant isolation, RLS, or stored business data.

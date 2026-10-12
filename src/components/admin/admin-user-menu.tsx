@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ADMIN_ROUTES } from "@/config/admin";
+import { useI18n } from "@/i18n/provider";
 import { signOutAction } from "@/lib/auth/actions";
 import { cn } from "@/lib/utils";
 
@@ -21,25 +22,26 @@ type AdminUserMenuProps = {
 };
 
 export function AdminUserMenu({ email, role }: AdminUserMenuProps) {
+  const { messages } = useI18n();
   const signOut = signOutAction.bind(null, ADMIN_ROUTES.login);
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        aria-label="Admin account menu"
+        aria-label={messages.shell.adminAccountMenu}
         className={cn(buttonVariants({ variant: "outline" }), "max-w-64")}
       >
         <span className="truncate">{email}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuLabel className="space-y-1 font-normal">
-          <p className="truncate text-sm font-medium text-foreground">{email}</p>
-          <p className="text-xs text-muted-foreground">Platform admin · {role}</p>
+          <p className="truncate text-sm font-medium text-foreground"><bdi>{email}</bdi></p>
+          <p className="text-xs text-muted-foreground">{messages.shell.platformAdmin} · {role}</p>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem>
           <Link href={ADMIN_ROUTES.settings} className="flex w-full">
-            Settings
+            {messages.nav.settings}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
@@ -49,7 +51,7 @@ export function AdminUserMenu({ email, role }: AdminUserMenuProps) {
             variant="ghost"
             className="h-8 w-full justify-start text-destructive hover:bg-destructive/10 hover:text-destructive"
           >
-            Sign out
+            {messages.auth.signOut}
           </Button>
         </form>
       </DropdownMenuContent>

@@ -5,28 +5,32 @@ import { ClientPageHeader, ClientSectionCard, ClientStatusBadge } from "@/compon
 import { CreateCleanerForm } from "@/components/workspace/cleaning-forms";
 import { CLIENT_ROUTES, canManageCleaning, cleaningAgentPath } from "@/config/client";
 import { listCleaningAgents } from "@/lib/cleaning/load";
+import { getRequestI18n } from "@/i18n/get-locale";
+import { clientMetadata } from "@/i18n/page-title";
 import { requireWorkspaceView } from "@/lib/tenancy/workspace-access";
 
-export const metadata = { title: "Cleaning team" };
+export async function generateMetadata() {
+  return clientMetadata((messages) => ({ title: messages.titles.cleaningTeam }));
+}
 
 export default async function CleaningAgentsPage() {
-  const view = await requireWorkspaceView();
+  const [{ messages }, view] = await Promise.all([getRequestI18n(), requireWorkspaceView()]);
   const canManage = view.kind === "membership" && canManageCleaning(view.context.membership.role);
   const agents = await listCleaningAgents();
 
   return (
     <div className="space-y-6">
       <ClientPageHeader
-        kicker="Turnover"
-        title="Cleaning team"
-        description="Each cleaner has one permanent link for every property they are assigned."
+        kicker={messages.screens.turnover}
+        title={messages.screens.cleaningTeam}
+        description={messages.screens.permanentLink}
         actions={
           <Button asChild variant="outline">
             <Link href={CLIENT_ROUTES.cleaning}>Active cleaning</Link>
           </Button>
         }
       />
-      <ClientSectionCard title="Cleaners">
+      <ClientSectionCard title={messages.screens.cleaningTeam}>
         {agents.length === 0 ? (
           <p className="text-sm text-onwarda-muted">No cleaners yet.</p>
         ) : (
@@ -37,11 +41,11 @@ export default async function CleaningAgentsPage() {
                   <p className="font-medium">{agent.name}</p>
                   <p className="text-sm text-onwarda-muted">
                     {agent.propertyCount} properties · {agent.activeTaskCount} active cleaning ·{" "}
-                    {agent.linkConfigured ? "Permanent link configured" : "No link yet"}
+                    {agent.linkConfigured ? messages.screens.linkConfigured : messages.screens.noLinkYet}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <ClientStatusBadge label={agent.active ? "Active" : "Disabled"} tone={agent.active ? "olive" : "neutral"} />
+                  <ClientStatusBadge label={agent.active ? messages.screens.active : messages.screens.disabled} tone={agent.active ? "olive" : "neutral"} />
                   <Link href={cleaningAgentPath(agent.id)} className="text-sm font-medium underline underline-offset-4">
                     Open profile
                   </Link>
@@ -52,12 +56,12 @@ export default async function CleaningAgentsPage() {
         )}
       </ClientSectionCard>
       {canManage ? (
-        <ClientSectionCard title="Add cleaner">
+        <ClientSectionCard title={messages.actions.addCleaner}>
           <CreateCleanerForm />
         </ClientSectionCard>
       ) : (
-        <ClientSectionCard title="Add cleaner">
-          <p className="text-sm text-onwarda-muted">Owners, admins, and managers can add cleaners.</p>
+        <ClientSectionCard title={messages.actions.addCleaner}>
+          <p className="text-sm text-onwarda-muted">{messages.screens.managersCanAddCleaners}</p>
         </ClientSectionCard>
       )}
     </div>

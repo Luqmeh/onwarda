@@ -2,10 +2,10 @@
 
 import { useActionState } from "react";
 
+import { useI18n } from "@/i18n/provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PROPERTY_TYPE_LABELS } from "@/lib/property-cms/catalog";
 import {
   createWorkspacePropertyAction,
   type WorkspaceMutationState,
@@ -16,6 +16,7 @@ const initialState: WorkspaceMutationState = {};
 const selectClass = "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm";
 
 export function CreatePropertyForm() {
+  const { messages } = useI18n();
   const [state, formAction, pending] = useActionState(
     createWorkspacePropertyAction,
     initialState,
@@ -24,12 +25,12 @@ export function CreatePropertyForm() {
   return (
     <form action={formAction} className="space-y-5">
       <div className="space-y-2">
-        <Label htmlFor="name">Property name</Label>
+        <Label htmlFor="name">{messages.fields.propertyName}</Label>
         <Input id="name" name="name" required maxLength={120} placeholder="Riad Atlas" />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="internalIdentifier">Internal identifier</Label>
+          <Label htmlFor="internalIdentifier">{messages.fields.internalId}</Label>
           <Input
             id="internalIdentifier"
             name="internalIdentifier"
@@ -38,27 +39,27 @@ export function CreatePropertyForm() {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="propertyType">Property type</Label>
+          <Label htmlFor="propertyType">{messages.fields.propertyType}</Label>
           <select id="propertyType" name="propertyType" defaultValue="" className={selectClass}>
-            <option value="">Set later</option>
+            <option value="">{messages.screens.setLater}</option>
             {Object.values(PROPERTY_TYPES).map((type) => (
               <option key={type} value={type}>
-                {PROPERTY_TYPE_LABELS[type]}
+                {messages.catalog[type]}
               </option>
             ))}
           </select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="city">City</Label>
+          <Label htmlFor="city">{messages.fields.city}</Label>
           <Input id="city" name="city" maxLength={80} placeholder="Marrakech" />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="country">Country</Label>
+          <Label htmlFor="country">{messages.fields.country}</Label>
           <Input id="country" name="country" maxLength={80} placeholder="Morocco" />
         </div>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="status">Status</Label>
+        <Label htmlFor="status">{messages.fields.status}</Label>
         <select id="status" name="status" defaultValue="draft" className={selectClass}>
           <option value="draft">Draft</option>
           <option value="active">Active</option>

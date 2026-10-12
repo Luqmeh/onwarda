@@ -1,5 +1,7 @@
 "use client";
 
+import { useI18n } from "@/i18n/provider";
+
 import { useActionState, useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -20,6 +22,7 @@ export function ReservationStatusForm({
   reservationId: string;
   status: string;
 }) {
+  const { messages } = useI18n();
   const action = useMemo(
     () => updateWorkspaceReservationStatusAction.bind(null, reservationId),
     [reservationId],
@@ -29,7 +32,7 @@ export function ReservationStatusForm({
   return (
     <form action={formAction} className="space-y-3">
       <div className="space-y-2">
-        <Label htmlFor="reservation-status">Stay status</Label>
+        <Label htmlFor="reservation-status">{messages.fields.stayStatus}</Label>
         <select
           id="reservation-status"
           name="status"
@@ -49,7 +52,7 @@ export function ReservationStatusForm({
         </p>
       ) : null}
       <Button type="submit" disabled={pending}>
-        {pending ? "Saving..." : "Update status"}
+        {pending ? messages.actions.saving : messages.actions.updateStatus}
       </Button>
     </form>
   );

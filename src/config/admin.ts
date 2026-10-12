@@ -1,12 +1,14 @@
 export const ADMIN_ROUTES = {
   root: "/admin",
   login: "/admin/login",
+  forgotPassword: "/admin/forgot-password",
   clients: "/admin/clients",
   clientNew: "/admin/clients/new",
   activity: "/admin/activity",
   settings: "/admin/settings",
   mfaSetup: "/admin/security/mfa-setup",
   mfaChallenge: "/admin/security/mfa-challenge",
+  accept: "/admin/accept",
 } as const;
 
 export function safeAdminPath(value: string | undefined) {

@@ -6,35 +6,40 @@ import {
   ClientStatusBadge,
 } from "@/components/workspace/client-ui";
 import { canWriteIssues } from "@/config/client";
+import { getRequestI18n } from "@/i18n/get-locale";
+import { clientMetadata } from "@/i18n/page-title";
+import { formattingLocale } from "@/i18n/locale";
 import { requireWorkspaceView } from "@/lib/tenancy/workspace-access";
 import { listWorkspaceIssues } from "@/lib/workspace/data";
 import { formatDate, humanizeToken, statusTone } from "@/lib/workspace/format";
 
-export const metadata = {
-  title: "Issues",
-};
+export async function generateMetadata() {
+  return clientMetadata((messages) => ({ title: messages.titles.issues }));
+}
 
 export default async function ClientIssuesPage() {
-  const [view, issues] = await Promise.all([
+  const [{ locale, messages }, view, issues] = await Promise.all([
+    getRequestI18n(),
     requireWorkspaceView(),
     listWorkspaceIssues(),
   ]);
+  const dates = formattingLocale(locale);
   const canUpdate =
     view.kind === "membership" && canWriteIssues(view.context.membership.role);
 
   return (
     <div className="space-y-6">
       <ClientPageHeader
-        kicker="Operations"
-        title="Issues"
-        description="Housekeeping, access, and guest requests for this organization. Permission to change an issue is enforced on the server, not by this page."
+        kicker={messages.screens.operations}
+        title={messages.nav.issues}
+        description={messages.screens.issuesIntro}
       />
 
       {issues.length === 0 ? (
-        <ClientSectionCard title="House matters">
+        <ClientSectionCard title={messages.screens.houseMatters}>
           <ClientEmptyState
-            title="Everything is quiet."
-            description="When a home needs attention, it will show here with its property, priority, and status."
+            title={messages.screens.quiet}
+            description={messages.screens.issuesListEmpty}
           />
         </ClientSectionCard>
       ) : (
@@ -46,7 +51,7 @@ export default async function ClientIssuesPage() {
                   <p className="font-medium capitalize">{humanizeToken(issue.category)}</p>
                   <p className="mt-1 text-sm text-onwarda-muted">{issue.description}</p>
                   <p className="mt-2 text-sm text-onwarda-muted">
-                    {issue.propertyName ?? "Workspace"} · {formatDate(issue.createdAt)}
+                    <bdi>{issue.propertyName ?? messages.copy.workspace}</bdi> · {formatDate(issue.createdAt, dates)}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">

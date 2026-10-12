@@ -3,6 +3,8 @@
 import { useActionState } from "react";
 
 import { CopyLinkButton } from "@/components/admin/copy-link-button";
+import { useI18n } from "@/i18n/provider";
+import { formattingLocale } from "@/i18n/locale";
 import { Button } from "@/components/ui/button";
 import {
   createWorkspaceGuestPortalLinkAction,
@@ -23,6 +25,7 @@ export function GuestPortalForm({
   hasActiveLink: boolean;
   expiresAt: string | null;
 }) {
+  const { locale, messages } = useI18n();
   const createAction = createWorkspaceGuestPortalLinkAction.bind(null, reservationId);
   const revokeAction = revokeWorkspaceGuestPortalLinkAction.bind(null, reservationId);
   const [createState, createFormAction, creating] = useActionState(createAction, createInitial);
@@ -32,8 +35,10 @@ export function GuestPortalForm({
     <div className="space-y-4">
       <p className="text-sm text-onwarda-muted">
         {hasActiveLink
-          ? `A guest stay link is active${expiresAt ? ` until ${new Date(expiresAt).toLocaleDateString()}` : ""}. Generate a new one to replace it.`
-          : "No guest stay link is active. Generate an opaque link for this reservation only."}
+          ? expiresAt
+            ? `${messages.actions.guestLinkActive} ${new Date(expiresAt).toLocaleDateString(formattingLocale(locale), { calendar: "gregory" })}`
+            : messages.actions.guestLinkActive
+          : messages.actions.guestLinkNone}
       </p>
       <form action={createFormAction}>
         {createState.error ? (
@@ -42,15 +47,15 @@ export function GuestPortalForm({
           </p>
         ) : null}
         <Button type="submit" disabled={creating}>
-          {creating ? "Generating..." : hasActiveLink ? "Replace guest link" : "Generate guest link"}
+          {creating ? messages.actions.generating : hasActiveLink ? messages.actions.replaceGuestLink : messages.actions.generateGuestLink}
         </Button>
       </form>
       {createState.portalUrl ? (
         <div className="space-y-2 rounded-lg bg-onwarda-cream/80 p-3">
-          <p className="break-all text-sm">{createState.portalUrl}</p>
-          <CopyLinkButton value={createState.portalUrl} label="Copy guest link" />
+          <p className="break-all text-sm" dir="ltr">{createState.portalUrl}</p>
+          <CopyLinkButton value={createState.portalUrl} label={messages.actions.copyGuestLink} />
           <p className="text-xs text-onwarda-muted">
-            This full link is shown once. Onwarda stores only the hashed token.
+            {messages.actions.guestLinkOnce}
           </p>
         </div>
       ) : null}
@@ -62,7 +67,7 @@ export function GuestPortalForm({
             </p>
           ) : null}
           <Button type="submit" variant="outline" disabled={revoking}>
-            {revoking ? "Revoking..." : "Revoke guest link"}
+            {revoking ? messages.actions.revoking : messages.actions.revokeGuestLink}
           </Button>
         </form>
       ) : null}

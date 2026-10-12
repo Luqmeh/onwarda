@@ -8,51 +8,56 @@ import {
   ClientStatusBadge,
 } from "@/components/workspace/client-ui";
 import { CLIENT_ROUTES, canManageStays, clientReservationPath } from "@/config/client";
+import { getRequestI18n } from "@/i18n/get-locale";
+import { clientMetadata } from "@/i18n/page-title";
+import { formattingLocale } from "@/i18n/locale";
 import { requireWorkspaceView } from "@/lib/tenancy/workspace-access";
 import { listWorkspaceReservations } from "@/lib/workspace/data";
 import {
   formatDate,
   guestDisplayName,
-  reservationStatusLabel,
+  labeledStatus,
   statusTone,
 } from "@/lib/workspace/format";
 
-export const metadata = {
-  title: "Reservations",
-};
+export async function generateMetadata() {
+  return clientMetadata((messages) => ({ title: messages.titles.reservations }));
+}
 
 export default async function ClientReservationsPage() {
-  const [view, reservations] = await Promise.all([
+  const [{ locale, messages }, view, reservations] = await Promise.all([
+    getRequestI18n(),
     requireWorkspaceView(),
     listWorkspaceReservations(),
   ]);
+  const dates = formattingLocale(locale);
   const canAdd =
     view.kind === "membership" && canManageStays(view.context.membership.role);
 
   return (
     <div className="space-y-6">
       <ClientPageHeader
-        kicker="Stays"
-        title="Reservations"
-        description="Guest arrivals and departures for this organization only."
+        kicker={messages.copy.staysKicker}
+        title={messages.nav.reservations}
+        description={messages.copy.reservationsDescription}
         actions={
           canAdd ? (
             <Button asChild>
-              <Link href={CLIENT_ROUTES.reservationNew}>New reservation</Link>
+              <Link href={CLIENT_ROUTES.reservationNew}>{messages.copy.newReservation}</Link>
             </Button>
           ) : null
         }
       />
 
       {reservations.length === 0 ? (
-        <ClientSectionCard title="Stays">
+        <ClientSectionCard title={messages.copy.staysKicker}>
           <ClientEmptyState
-            title="Your stays will appear here."
-            description="When a reservation is added, the guest, home, and dates will live on this page."
+            title={messages.copy.staysEmptyTitle}
+            description={messages.copy.staysEmptyBody}
             action={
               canAdd ? (
                 <Button asChild>
-                  <Link href={CLIENT_ROUTES.reservationNew}>New reservation</Link>
+                  <Link href={CLIENT_ROUTES.reservationNew}>{messages.copy.newReservation}</Link>
                 </Button>
               ) : null
             }
@@ -70,8 +75,8 @@ export default async function ClientReservationsPage() {
             }, new Map<string, typeof reservations>()),
           ).map(([day, stays]) => (
             <section key={day}>
-              <h2 className="mb-3 text-[0.7rem] font-medium tracking-[0.14em] text-onwarda-muted uppercase">
-                {formatDate(day)}
+              <h2 className="mb-3 text-sm font-medium text-onwarda-muted">
+                {formatDate(day, dates)}
               </h2>
               <ul className="space-y-3">
                 {stays.map((reservation) => (
@@ -81,14 +86,14 @@ export default async function ClientReservationsPage() {
                       className="client-surface client-lift flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div>
-                        <p className="font-medium">{guestDisplayName(reservation.guestName)}</p>
+                        <p className="font-medium"><bdi>{guestDisplayName(reservation.guestName, messages.guestFallback)}</bdi></p>
                         <p className="text-sm text-onwarda-muted">
-                          {reservation.propertyName ?? "Property"} · {formatDate(reservation.checkIn)} –{" "}
-                          {formatDate(reservation.checkOut)}
+                          <bdi>{reservation.propertyName ?? messages.copy.property}</bdi> · {formatDate(reservation.checkIn, dates)} –{" "}
+                          {formatDate(reservation.checkOut, dates)}
                         </p>
                       </div>
                       <ClientStatusBadge
-                        label={reservationStatusLabel(reservation.status)}
+                        label={labeledStatus(reservation.status, messages.status)}
                         tone={statusTone(reservation.status)}
                       />
                     </Link>

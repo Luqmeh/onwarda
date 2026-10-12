@@ -1,5 +1,7 @@
 "use client";
 
+import { useI18n } from "@/i18n/provider";
+
 import { useActionState, useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -29,13 +31,14 @@ export function EditGuestForm({
     () => updateWorkspaceGuestAction.bind(null, guestId),
     [guestId],
   );
+  const { messages } = useI18n();
   const [state, formAction, pending] = useActionState(action, initialState);
 
   return (
     <form action={formAction} className="space-y-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="guest-first-name">First name</Label>
+          <Label htmlFor="guest-first-name">{messages.fields.firstName}</Label>
           <Input
             id="guest-first-name"
             name="firstName"
@@ -45,7 +48,7 @@ export function EditGuestForm({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="guest-last-name">Last name</Label>
+          <Label htmlFor="guest-last-name">{messages.fields.lastName}</Label>
           <Input
             id="guest-last-name"
             name="lastName"
@@ -55,7 +58,7 @@ export function EditGuestForm({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="guest-email">Email</Label>
+          <Label htmlFor="guest-email">{messages.auth.email}</Label>
           <Input
             id="guest-email"
             name="email"
@@ -64,7 +67,7 @@ export function EditGuestForm({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="guest-phone">Phone</Label>
+          <Label htmlFor="guest-phone">{messages.fields.phone}</Label>
           <Input
             id="guest-phone"
             name="phone"
@@ -79,7 +82,7 @@ export function EditGuestForm({
         </p>
       ) : null}
       <Button type="submit" disabled={pending}>
-        {pending ? "Saving..." : "Save guest"}
+        {pending ? messages.actions.saving : messages.actions.saveGuest}
       </Button>
     </form>
   );

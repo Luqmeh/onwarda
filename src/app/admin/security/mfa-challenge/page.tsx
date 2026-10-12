@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { MfaChallengeForm } from "@/components/admin/mfa-challenge-form";
+import { LocaleFrame } from "@/components/i18n/locale-frame";
 import { AdminUnauthorized } from "@/components/admin/admin-unauthorized";
 import { ADMIN_ROUTES, safeAdminPath } from "@/config/admin";
 import { APP_NAME } from "@/config/app";
@@ -36,11 +37,13 @@ export default async function AdminMfaChallengePage({
   }
 
   return (
+    <LocaleFrame locale="en">
     <main className="mx-auto flex min-h-svh max-w-md flex-col justify-center px-6 py-10">
-      <p className="mb-6 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
-        {APP_NAME} Internal Admin
+      <p className="mb-6 text-xs font-medium text-muted-foreground">
+        {APP_NAME}
       </p>
       <MfaChallengeForm nextPath={nextPath} />
     </main>
+    </LocaleFrame>
   );
 }

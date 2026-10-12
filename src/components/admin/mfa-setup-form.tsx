@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useActionState } from "react";
 
+import { useI18n } from "@/i18n/provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +16,7 @@ import {
 const initialState: MfaActionState = {};
 
 export function MfaSetupForm({ nextPath }: { nextPath: string }) {
+  const { messages } = useI18n();
   const [enrollment, setEnrollment] = useState<
     { factorId: string; qrCode: string; secret: string } | { error: string } | null
   >(null);
@@ -33,7 +35,7 @@ export function MfaSetupForm({ nextPath }: { nextPath: string }) {
   return (
     <div className="space-y-5">
       <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Set up an authenticator</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{messages.screens.authenticatorTitle}</h1>
         <p className="text-sm text-muted-foreground">
           Platform administrator access requires a second factor. Open Google Authenticator,
           Microsoft Authenticator, or another TOTP app and scan this code. Keep that device
@@ -58,7 +60,7 @@ export function MfaSetupForm({ nextPath }: { nextPath: string }) {
             className="mx-auto size-48 rounded-md border bg-white p-2"
           />
           <details className="text-sm">
-            <summary className="cursor-pointer font-medium">Enter the setup key manually</summary>
+            <summary className="cursor-pointer font-medium">{messages.screens.enterSetupKey}</summary>
             <p className="mt-2 break-all rounded-md border bg-muted/40 p-2 font-mono text-xs">
               {enrollment.secret}
             </p>
@@ -86,7 +88,7 @@ export function MfaSetupForm({ nextPath }: { nextPath: string }) {
           </Button>
         </form>
       ) : enrollment ? null : (
-        <p className="text-sm text-muted-foreground">Preparing the authenticator setup...</p>
+        <p className="text-sm text-muted-foreground">{messages.screens.preparingAuthenticator}</p>
       )}
     </div>
   );

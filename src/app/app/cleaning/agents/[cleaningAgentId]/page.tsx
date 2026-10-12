@@ -16,15 +16,24 @@ import {
 } from "@/lib/cleaning/actions";
 import { getCleaningAgentDetail } from "@/lib/cleaning/load";
 import { NotFoundError } from "@/lib/errors";
+import { getRequestI18n } from "@/i18n/get-locale";
+import { clientMetadata } from "@/i18n/page-title";
 import { requireWorkspaceView } from "@/lib/tenancy/workspace-access";
 import { formatDateTime } from "@/lib/workspace/format";
 
-function taskPropertyName(value: { name?: string } | { name?: string }[] | null) {
+export async function generateMetadata() {
+  return clientMetadata((messages) => ({ title: messages.titles.cleaningTeam }));
+}
+
+function taskPropertyName(
+  value: { name?: string } | { name?: string }[] | null,
+  fallback: string,
+) {
   if (Array.isArray(value)) {
-    return value[0]?.name ?? "Property";
+    return value[0]?.name ?? fallback;
   }
 
-  return value?.name ?? "Property";
+  return value?.name ?? fallback;
 }
 
 export default async function CleaningAgentPage({
@@ -35,7 +44,7 @@ export default async function CleaningAgentPage({
   searchParams: Promise<{ notice?: string }>;
 }) {
   const { cleaningAgentId } = await params;
-  const view = await requireWorkspaceView();
+  const [{ messages }, view] = await Promise.all([getRequestI18n(), requireWorkspaceView()]);
   const canManage = view.kind === "membership" && canManageCleaning(view.context.membership.role);
   const canAdminister =
     view.kind === "membership" && canAdministerCleaning(view.context.membership.role);
@@ -57,24 +66,24 @@ export default async function CleaningAgentPage({
   return (
     <div className="space-y-6">
       <ClientPageHeader
-        kicker="Cleaning team"
+        kicker={messages.screens.cleaningTeam}
         title={agent.name}
-        description={agent.active ? "Active cleaner profile." : "Disabled. The permanent link no longer works."}
+        description={agent.active ? messages.screens.activeProfile : messages.screens.disabledProfile}
         actions={
           <Button asChild variant="outline">
-            <Link href={CLIENT_ROUTES.cleaningAgents}>All cleaners</Link>
+            <Link href={CLIENT_ROUTES.cleaningAgents}>{messages.screens.cleaningTeam}</Link>
           </Button>
         }
       />
       {query.notice ? (
         <p className="rounded-lg border bg-onwarda-white px-3 py-2 text-sm" role="status">
-          {query.notice === "disabled" ? "Cleaner disabled and link revoked." : "Cleaner enabled. Generate a new link if they need access."}
+          {query.notice === "disabled" ? messages.screens.cleanerDisabled : messages.screens.cleanerEnabled}
         </p>
       ) : null}
       <div className="grid gap-6 lg:grid-cols-2">
-        <ClientSectionCard title="Permanent link">
+        <ClientSectionCard title={messages.screens.permanentLink}>
           <p className="text-sm text-onwarda-muted">
-            {agent.linkConfigured ? "Permanent link configured." : "No active link."}
+            {agent.linkConfigured ? messages.screens.linkConfigured : messages.screens.noActiveLink}
           </p>
           {canAdminister ? <div className="mt-4"><CleaningLinkForm agentId={agent.id} /></div> : null}
           {canAdminister ? (
@@ -83,14 +92,14 @@ export default async function CleaningAgentPage({
               action={setCleaningAgentActiveAction.bind(null, agent.id, !agent.active)}
             >
               <Button type="submit" variant="outline">
-                {agent.active ? "Disable cleaner" : "Enable cleaner"}
+                {agent.active ? messages.screens.disableCleaner : messages.screens.enableCleaner}
               </Button>
             </form>
           ) : null}
         </ClientSectionCard>
-        <ClientSectionCard title="Assigned properties">
+        <ClientSectionCard title={messages.screens.assignedProperties}>
           {agent.assignments.length === 0 ? (
-            <p className="text-sm text-onwarda-muted">No properties assigned.</p>
+            <p className="text-sm text-onwarda-muted">{messages.screens.noPropertiesAssigned}</p>
           ) : (
             <ul className="space-y-2 text-sm">
               {agent.assignments.map((assignment) => (
@@ -99,7 +108,7 @@ export default async function CleaningAgentPage({
                   {canManage ? (
                     <form action={unassignCleaningPropertyAction.bind(null, agent.id, assignment.propertyId)}>
                       <Button type="submit" variant="outline" size="sm">
-                        Remove
+                        {messages.catalog.remove}
                       </Button>
                     </form>
                   ) : null}
@@ -122,7 +131,7 @@ export default async function CleaningAgentPage({
             {agent.activeTasks.map((task) => (
               <li key={task.id}>
                 <Link href={cleaningTaskPath(task.id)} className="font-medium underline underline-offset-4">
-                  {taskPropertyName(task.properties)}
+                  {taskPropertyName(task.properties, messages.copy.property)}
                 </Link>{" "}
                 · {task.status.replaceAll("_", " ")}
               </li>
@@ -130,7 +139,7 @@ export default async function CleaningAgentPage({
             {agent.completedTasks.map((task) => (
               <li key={task.id}>
                 <Link href={cleaningTaskPath(task.id)} className="underline underline-offset-4">
-                  {taskPropertyName(task.properties)}
+                  {taskPropertyName(task.properties, messages.copy.property)}
                 </Link>
                 {task.completed_at ? ` · completed ${formatDateTime(task.completed_at)}` : " · completed"}
               </li>

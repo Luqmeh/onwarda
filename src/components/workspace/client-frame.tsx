@@ -5,10 +5,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, MoreHorizontal, X } from "lucide-react";
 
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { ClientNav, type ClientNavLink } from "@/components/workspace/client-nav";
 import { ClientUserMenu } from "@/components/workspace/client-user-menu";
 import { Button } from "@/components/ui/button";
 import { CLIENT_ROUTES, isClientNavActive } from "@/config/client";
+import { useI18n } from "@/i18n/provider";
 
 const DOCK = [
   CLIENT_ROUTES.root,
@@ -42,6 +44,7 @@ export function ClientFrame({
 }: ClientFrameProps) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const { messages } = useI18n();
   const dock = DOCK.map((href) => items.find((item) => item.href === href)).filter(
     (item): item is ClientNavLink => Boolean(item),
   );
@@ -69,18 +72,23 @@ export function ClientFrame({
               onClick={() => setOpen((value) => !value)}
             >
               {open ? <X className="size-4" /> : <Menu className="size-4" />}
-              <span className="sr-only">{open ? "Close navigation" : "Open navigation"}</span>
+              <span className="sr-only">
+                {open ? messages.nav.closeNavigation : messages.nav.openNavigation}
+              </span>
             </Button>
             <div className="min-w-0">{brand}</div>
           </div>
           <p className="hidden text-sm text-onwarda-muted lg:block">{organizationName}</p>
-          <ClientUserMenu
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <ClientUserMenu
             email={email}
             name={name}
             organizationName={organizationName}
             role={role}
             canManageSettings={canManageSettings}
           />
+          </div>
         </header>
         {open ? (
           <div id="client-mobile-nav" className="border-b bg-onwarda-white px-4 py-4 lg:hidden">
@@ -89,7 +97,7 @@ export function ClientFrame({
         ) : null}
         <main className="min-w-0 flex-1 px-4 pt-2 pb-24 lg:px-8 lg:pt-4 lg:pb-10">{children}</main>
         <nav
-          aria-label="Primary"
+          aria-label={messages.nav.primary}
           className="fixed inset-x-0 bottom-0 z-30 border-t bg-onwarda-white/95 px-2 py-2 backdrop-blur-sm lg:hidden"
         >
           <ul className="mx-auto grid max-w-lg grid-cols-5 gap-1">
@@ -118,7 +126,7 @@ export function ClientFrame({
                 onClick={() => setOpen(true)}
               >
                 <MoreHorizontal className="size-4" aria-hidden="true" />
-                More
+                {messages.nav.more}
               </button>
             </li>
           </ul>

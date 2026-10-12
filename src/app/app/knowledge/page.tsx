@@ -6,16 +6,19 @@ import {
   ClientStatusBadge,
 } from "@/components/workspace/client-ui";
 import { ORGANIZATION_OPERATIONAL_ROLES } from "@/lib/authorization/roles";
+import { getRequestI18n } from "@/i18n/get-locale";
+import { clientMetadata } from "@/i18n/page-title";
 import { requireWorkspaceView } from "@/lib/tenancy/workspace-access";
 import { listWorkspaceKnowledge, listWorkspaceProperties } from "@/lib/workspace/data";
 import { humanizeToken, statusTone } from "@/lib/workspace/format";
 
-export const metadata = {
-  title: "Knowledge",
-};
+export async function generateMetadata() {
+  return clientMetadata((messages) => ({ title: messages.titles.knowledge }));
+}
 
 export default async function ClientKnowledgePage() {
-  const [view, entries, properties] = await Promise.all([
+  const [{ messages }, view, entries, properties] = await Promise.all([
+    getRequestI18n(),
     requireWorkspaceView(),
     listWorkspaceKnowledge(),
     listWorkspaceProperties(),
@@ -27,15 +30,15 @@ export default async function ClientKnowledgePage() {
   return (
     <div className="space-y-6">
       <ClientPageHeader
-        kicker="House notes"
-        title="Knowledge"
-        description="House rules, check-in notes, Wi-Fi, and the small things that make a stay feel considered."
+        kicker={messages.screens.houseNotes}
+        title={messages.nav.knowledge}
+        description={messages.screens.knowledgeIntro}
       />
 
       {canCreate ? (
         <ClientSectionCard
-          title="Add knowledge"
-          description="Owner, admin, and manager roles can keep property notes here. This is not the guest portal."
+          title={messages.screens.addKnowledge}
+          description={messages.screens.addKnowledgeHelp}
         >
           <CreateKnowledgeForm
             properties={properties.map((property) => ({
@@ -46,11 +49,11 @@ export default async function ClientKnowledgePage() {
         </ClientSectionCard>
       ) : null}
 
-      <ClientSectionCard title="Property knowledge">
+      <ClientSectionCard title={messages.screens.propertyKnowledge}>
         {entries.length === 0 ? (
           <ClientEmptyState
-            title="Your property knowledge will live here."
-            description="This is the foundation for guest instructions, tutorials, FAQs, and house rules."
+            title={messages.screens.knowledgeEmpty}
+            description={messages.screens.knowledgeEmptyBody}
           />
         ) : (
           <ul className="divide-y">

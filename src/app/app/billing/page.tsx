@@ -15,33 +15,33 @@ import {
   subscriptionStatusLabel,
 } from "@/lib/billing/status";
 import { formatIndicativePrice } from "@/lib/billing/plans";
+import { getRequestI18n } from "@/i18n/get-locale";
+import { clientMetadata } from "@/i18n/page-title";
+import { formattingLocale } from "@/i18n/locale";
 import { requireWorkspaceView } from "@/lib/tenancy/workspace-access";
 import { formatDate, formatDateTime } from "@/lib/workspace/format";
 
-export const metadata = {
-  title: "Billing",
-};
-
-const NOTICE_COPY: Record<string, string> = {
-  "plan-updated": "Selected plan updated. The subscription is still waiting for payment configuration.",
-  "plan-change-requested": "Plan change requested. The current plan is unchanged until billing can apply it.",
-  "cancellation-requested": "Cancellation requested. The subscription record is still here.",
-  "cancellation-withdrawn": "Cancellation request withdrawn.",
-};
+export async function generateMetadata() {
+  return clientMetadata((messages) => ({ title: messages.titles.billing }));
+}
 
 export default async function ClientBillingPage({
   searchParams,
 }: {
   searchParams: Promise<{ notice?: string }>;
 }) {
-  const view = await requireWorkspaceView();
+  const [{ locale, messages }, view] = await Promise.all([
+    getRequestI18n(),
+    requireWorkspaceView(),
+  ]);
+  const dates = formattingLocale(locale);
   const role = view.kind === "membership" ? view.context.membership.role : null;
   const canView = view.kind === "support" || (role ? canViewBilling(role) : false);
   const canManage = view.kind === "membership" && role ? canManageBilling(role) : false;
 
   if (!canView) {
     return (
-      <ClientSectionCard title="Billing">
+      <ClientSectionCard title={messages.nav.billing}>
         <p className="text-sm text-onwarda-muted">
           Billing is available to owners, admins, and managers.
         </p>
@@ -52,7 +52,13 @@ export default async function ClientBillingPage({
   const billing = await getWorkspaceBillingSnapshot(view);
   const plan = billing.subscription ? getCommercialPlan(billing.subscription.plan) : null;
   const query = await searchParams;
-  const notice = query.notice ? NOTICE_COPY[query.notice] : null;
+  const billingNotices: Record<string, string> = {
+    "plan-updated": messages.screens.planUpdated,
+    "plan-change-requested": messages.screens.planChangeRequested,
+    "cancellation-requested": messages.screens.cancellationRequested,
+    "cancellation-withdrawn": messages.screens.cancellationWithdrawn,
+  };
+  const notice = query.notice ? billingNotices[query.notice] : null;
   const appliesImmediately = customerPlanChangeAppliesImmediately(
     billing.subscription?.status,
   );
@@ -60,9 +66,9 @@ export default async function ClientBillingPage({
   return (
     <div className="space-y-6">
       <ClientPageHeader
-        kicker="Workspace"
-        title="Billing"
-        description="Subscription status for this organization. Payment processing is not connected yet."
+        kicker={messages.screens.workspaceKicker}
+        title={messages.nav.billing}
+        description={messages.screens.billingIntro}
       />
       {notice ? (
         <p className="rounded-lg border bg-onwarda-white px-3 py-2 text-sm" role="status">
@@ -71,8 +77,8 @@ export default async function ClientBillingPage({
       ) : null}
 
       <ClientSectionCard
-        title="Current subscription"
-        description="This is the commercial record for your organization. It is not a payment receipt."
+        title={messages.screens.currentSubscription}
+        description={messages.screens.currentSubscriptionHelp}
       >
         <dl className="grid gap-4 text-sm sm:grid-cols-2">
           <div>
@@ -91,31 +97,31 @@ export default async function ClientBillingPage({
           <div>
             <dt className="text-onwarda-muted">Billing interval</dt>
             <dd className="mt-1 font-medium capitalize">
-              {billing.interval ?? "Not scheduled"}
+              {billing.interval ?? messages.screens.notScheduled}
             </dd>
           </div>
           <div>
             <dt className="text-onwarda-muted">Subscription start</dt>
             <dd className="mt-1 font-medium">
               {billing.subscription?.started_at
-                ? formatDate(billing.subscription.started_at)
-                : "Not started"}
+                ? formatDate(billing.subscription.started_at, dates)
+                : messages.screens.notStartedYet}
             </dd>
           </div>
           <div>
             <dt className="text-onwarda-muted">Next billing date</dt>
             <dd className="mt-1 font-medium">
               {billing.subscription?.renews_at && billing.status.isActivated
-                ? formatDate(billing.subscription.renews_at)
-                : "Unknown until billing is configured"}
+                ? formatDate(billing.subscription.renews_at, dates)
+                : messages.screens.unknownUntilBilling}
             </dd>
           </div>
           <div>
             <dt className="text-onwarda-muted">Created</dt>
             <dd className="mt-1 font-medium">
               {billing.subscription?.created_at
-                ? formatDateTime(billing.subscription.created_at)
-                : "No record yet"}
+                ? formatDateTime(billing.subscription.created_at, dates)
+                : messages.screens.noRecordYet}
             </dd>
           </div>
         </dl>
@@ -131,8 +137,8 @@ export default async function ClientBillingPage({
       </ClientSectionCard>
 
       <ClientSectionCard
-        title="Indicative amount"
-        description="Prepared from the published price list and the current active-property count. This is not an invoice."
+        title={messages.screens.indicativeAmount}
+        description={messages.screens.indicativeAmountHelp}
       >
         <dl className="grid gap-4 text-sm sm:grid-cols-2">
           <div>
@@ -142,7 +148,7 @@ export default async function ClientBillingPage({
           <div>
             <dt className="text-onwarda-muted">Indicative monthly total</dt>
             <dd className="mt-1 font-medium">
-              {billing.price ? formatIndicativePrice(billing.price) : "No published plan to calculate"}
+              {billing.price ? formatIndicativePrice(billing.price) : messages.screens.noPublishedPlan}
             </dd>
           </div>
         </dl>
@@ -162,14 +168,14 @@ export default async function ClientBillingPage({
               appliesImmediately={appliesImmediately}
             />
           </ClientSectionCard>
-          <ClientSectionCard title="Cancellation">
+          <ClientSectionCard title={messages.screens.cancellation}>
             <CustomerCancellationForm
               cancellationRequested={billing.status.cancellationRequested}
             />
           </ClientSectionCard>
         </div>
       ) : (
-        <ClientSectionCard title="Billing actions">
+        <ClientSectionCard title={messages.screens.billingActions}>
           <p className="text-sm text-onwarda-muted">
             Owners and admins can request plan changes or cancellation. Managers have read-only
             visibility.
@@ -178,8 +184,8 @@ export default async function ClientBillingPage({
       )}
 
       <ClientSectionCard
-        title="History"
-        description="Organization-scoped subscription history. Provider webhook events are not recorded yet."
+        title={messages.screens.history}
+        description={messages.screens.historyHelp}
       >
         {billing.history.length === 0 ? (
           <p className="text-sm text-onwarda-muted">No subscription history yet.</p>
@@ -189,7 +195,7 @@ export default async function ClientBillingPage({
               <li key={event.id} className="rounded-lg border px-3 py-2">
                 <p className="font-medium">{event.event_type.replaceAll("_", " ")}</p>
                 <p className="text-onwarda-muted">
-                  {formatDateTime(event.created_at)} · {event.source}
+                  {formatDateTime(event.created_at, dates)} · {event.source}
                   {event.previous_status || event.new_status
                     ? ` · ${subscriptionStatusLabel(event.previous_status)} → ${subscriptionStatusLabel(event.new_status)}`
                     : null}

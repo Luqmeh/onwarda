@@ -8,31 +8,31 @@ import {
 import { WorkspaceBrandingForm } from "@/components/workspace/workspace-branding-form";
 import { CLIENT_ROUTES, canManageWorkspace } from "@/config/client";
 import { loadWorkspaceBranding } from "@/lib/branding/load";
+import { getRequestI18n } from "@/i18n/get-locale";
+import { clientMetadata } from "@/i18n/page-title";
 import { requireWorkspaceView } from "@/lib/tenancy/workspace-access";
 import { listWorkspaceMembers } from "@/lib/workspace/data";
 import { statusTone } from "@/lib/workspace/format";
 
-export const metadata = {
-  title: "Settings",
-};
-
-const NOTICE_COPY: Record<string, string> = {
-  "branding-updated": "Branding updated.",
-  "branding-logo-removed": "Logo removed.",
-};
+export async function generateMetadata() {
+  return clientMetadata((messages) => ({ title: messages.titles.settings }));
+}
 
 export default async function ClientSettingsPage({
   searchParams,
 }: {
   searchParams: Promise<{ notice?: string }>;
 }) {
-  const view = await requireWorkspaceView();
+  const [{ messages }, view] = await Promise.all([
+    getRequestI18n(),
+    requireWorkspaceView(),
+  ]);
   const canManage =
     view.kind === "membership" && canManageWorkspace(view.context.membership.role);
 
   if (view.kind === "membership" && !canManage) {
     return (
-      <ClientSectionCard title="Settings">
+      <ClientSectionCard title={messages.nav.settings}>
         <p className="text-sm text-onwarda-muted">
           Workspace settings are available to owners and admins.
         </p>
@@ -44,21 +44,25 @@ export default async function ClientSettingsPage({
   const branding = await loadWorkspaceBranding(view);
   const members = await listWorkspaceMembers();
   const query = await searchParams;
-  const notice = query.notice ? NOTICE_COPY[query.notice] : null;
+  const settingNotices: Record<string, string> = {
+    "branding-updated": messages.screens.brandingUpdated,
+    "branding-logo-removed": messages.screens.logoRemoved,
+  };
+  const notice = query.notice ? settingNotices[query.notice] : null;
 
   return (
     <div className="space-y-6">
       <ClientPageHeader
-        kicker="Workspace"
-        title="Settings"
-        description="Organization profile for this client. Subscription status lives in Billing."
+        kicker={messages.screens.workspaceKicker}
+        title={messages.nav.settings}
+        description={messages.screens.settingsIntro}
       />
       {notice ? (
         <p className="rounded-lg border bg-onwarda-white px-3 py-2 text-sm" role="status">
           {notice}
         </p>
       ) : null}
-      <ClientSectionCard title="Organization">
+      <ClientSectionCard title={messages.copy.organization}>
         <dl className="grid gap-4 text-sm sm:grid-cols-2">
           <div>
             <dt className="text-onwarda-muted">Display name</dt>
@@ -80,15 +84,15 @@ export default async function ClientSettingsPage({
       </ClientSectionCard>
       {view.kind === "membership" && canManage ? (
         <ClientSectionCard
-          title="Branding"
-          description="This identity appears in the workspace and will later appear in the guest portal. Staff cannot change it."
+          title={messages.screens.branding}
+          description={messages.screens.brandingHelp}
         >
           <WorkspaceBrandingForm branding={branding} />
         </ClientSectionCard>
       ) : (
         <ClientSectionCard
-          title="Branding"
-          description="Support mode is read-only. Branding can be changed by an organization owner or admin."
+          title={messages.screens.branding}
+          description={messages.screens.brandingReadOnly}
         >
           <dl className="grid gap-4 text-sm sm:grid-cols-2">
             <div>
@@ -111,16 +115,16 @@ export default async function ClientSettingsPage({
         </ClientSectionCard>
       )}
       <ClientSectionCard
-        title="Billing"
-        description="Subscription status is organization-scoped and lives on the billing page."
+        title={messages.nav.billing}
+        description={messages.screens.billingLink}
       >
         <Link href={CLIENT_ROUTES.billing} className="text-sm font-medium underline underline-offset-4">
           Open billing
         </Link>
       </ClientSectionCard>
       <ClientSectionCard
-        title="Members"
-        description="People who belong to this organization. Roles cannot be changed from this page."
+        title={messages.screens.members}
+        description={messages.screens.membersHelp}
       >
         {members.length === 0 ? (
           <p className="text-sm text-onwarda-muted">No members are attached yet.</p>

@@ -18,6 +18,9 @@ import {
 } from "@/lib/cleaning/catalog";
 import { CLIENT_ROUTES, canManageStays, cleaningTaskPath, clientGuestPath, clientPropertyPath } from "@/config/client";
 import { NotFoundError } from "@/lib/errors";
+import { getRequestI18n } from "@/i18n/get-locale";
+import { clientMetadata } from "@/i18n/page-title";
+import { formattingLocale } from "@/i18n/locale";
 import { requireWorkspaceView } from "@/lib/tenancy/workspace-access";
 import { getWorkspaceReservation } from "@/lib/workspace/data";
 import { JOURNEY_STATUS_LABELS } from "@/lib/guest-portal/journey";
@@ -26,26 +29,27 @@ import {
   guestDisplayName,
   humanizeToken,
   propertyLocation,
-  reservationStatusLabel,
+  labeledStatus,
   statusTone,
 } from "@/lib/workspace/format";
 import type { ReservationJourneyStatus } from "@/types/enums";
 
-export const metadata = {
-  title: "Reservation",
-};
+export async function generateMetadata() {
+  return clientMetadata((messages) => ({ title: messages.titles.reservation }));
+}
 
 function JourneyStep({
   title,
   state,
   detail,
+  labels,
 }: {
   title: string;
   state: "complete" | "pending" | "later";
   detail: string;
+  labels: { complete: string; pending: string; later: string };
 }) {
-  const mark =
-    state === "complete" ? "Complete" : state === "pending" ? "Pending" : "Later";
+  const mark = labels[state];
 
   return (
     <li className="flex items-start justify-between gap-4 py-3">
@@ -67,7 +71,11 @@ export default async function ClientReservationDetailPage({
   params: Promise<{ reservationId: string }>;
 }) {
   const { reservationId } = await params;
-  const view = await requireWorkspaceView();
+  const [{ locale, messages }, view] = await Promise.all([
+    getRequestI18n(),
+    requireWorkspaceView(),
+  ]);
+  const dates = formattingLocale(locale);
 
   let reservation;
 
@@ -101,54 +109,54 @@ export default async function ClientReservationDetailPage({
   return (
     <div className="space-y-6">
       <ClientPageHeader
-        kicker="Stays"
+        kicker={messages.copy.staysKicker}
         title={guestName}
-        description={`${reservation.propertyName} · ${formatDate(reservation.checkIn)} – ${formatDate(reservation.checkOut)}`}
+        description={`${reservation.propertyName} · ${formatDate(reservation.checkIn, dates)} – ${formatDate(reservation.checkOut, dates)}`}
         actions={
           <Button asChild variant="outline">
-            <Link href={CLIENT_ROUTES.reservations}>All reservations</Link>
+            <Link href={CLIENT_ROUTES.reservations}>{messages.copy.viewAll}</Link>
           </Button>
         }
       />
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <ClientSectionCard title="Reservation">
+        <ClientSectionCard title={messages.screens.reservation}>
           <dl className="grid gap-4 text-sm sm:grid-cols-2">
             <div>
-              <dt className="text-onwarda-muted">Status</dt>
+              <dt className="text-onwarda-muted">{messages.fields.status}</dt>
               <dd className="mt-1">
                 <ClientStatusBadge
-                  label={reservationStatusLabel(reservation.status)}
+                  label={labeledStatus(reservation.status, messages.status)}
                   tone={statusTone(reservation.status)}
                 />
               </dd>
             </div>
             <div>
-              <dt className="text-onwarda-muted">Reference</dt>
+              <dt className="text-onwarda-muted">{messages.actions.reference}</dt>
               <dd className="mt-1 font-medium">{reservation.reference}</dd>
             </div>
             <div>
-              <dt className="text-onwarda-muted">Arrival</dt>
-              <dd className="mt-1 font-medium">{formatDate(reservation.checkIn)}</dd>
+              <dt className="text-onwarda-muted">{messages.fields.arrival}</dt>
+              <dd className="mt-1 font-medium">{formatDate(reservation.checkIn, dates)}</dd>
             </div>
             <div>
-              <dt className="text-onwarda-muted">Departure</dt>
-              <dd className="mt-1 font-medium">{formatDate(reservation.checkOut)}</dd>
+              <dt className="text-onwarda-muted">{messages.fields.departure}</dt>
+              <dd className="mt-1 font-medium">{formatDate(reservation.checkOut, dates)}</dd>
             </div>
             <div>
               <dt className="text-onwarda-muted">Created</dt>
-              <dd className="mt-1 font-medium">{formatDate(reservation.createdAt)}</dd>
+              <dd className="mt-1 font-medium">{formatDate(reservation.createdAt, dates)}</dd>
             </div>
           </dl>
           {cleaning ? (
             <div className="mt-5 border-t pt-5 text-sm">
               <p className="font-medium">
-                Checked out ·{" "}
+                {messages.actions.checkedOut} ·{" "}
                 {PROPERTY_READINESS_LABELS[cleaning.readiness as PropertyReadiness] ??
                   CLEANING_TASK_STATUS_LABELS[cleaning.status as CleaningTaskStatus]}
               </p>
               <Link href={cleaningTaskPath(cleaning.id)} className="mt-2 inline-block font-medium underline underline-offset-4">
-                View cleaning task
+                {messages.actions.viewCleaning}
               </Link>
             </div>
           ) : null}
@@ -162,9 +170,9 @@ export default async function ClientReservationDetailPage({
           ) : null}
         </ClientSectionCard>
 
-        <ClientSectionCard title="Property">
+        <ClientSectionCard title={messages.copy.property}>
           <p className="font-medium">{reservation.propertyName}</p>
-          <p className="mt-1 text-sm text-onwarda-muted">{location ?? "Location not set"}</p>
+          <p className="mt-1 text-sm text-onwarda-muted">{location ?? messages.copy.locationNotSet}</p>
           <div className="mt-4">
             <Button asChild variant="outline">
               <Link href={clientPropertyPath(reservation.propertyId)}>View property</Link>
@@ -192,7 +200,7 @@ export default async function ClientReservationDetailPage({
       </ClientSectionCard>
 
       <ClientSectionCard
-        title="Guest journey"
+        title={messages.screens.guestJourney}
         description={
           JOURNEY_STATUS_LABELS[
             (reservation.journeyStatus ?? "not_started") as ReservationJourneyStatus
@@ -201,44 +209,69 @@ export default async function ClientReservationDetailPage({
       >
         <ul className="divide-y">
           <JourneyStep
-            title="Reservation"
+            labels={{
+              complete: messages.screens.complete,
+              pending: messages.screens.pending,
+              later: messages.screens.later,
+            }}
+            title={messages.screens.reservation}
             state="complete"
-            detail="This stay has been created in the workspace."
+            detail={messages.screens.stayCreated}
           />
           <JourneyStep
-            title="Guest information"
+            labels={{
+              complete: messages.screens.complete,
+              pending: messages.screens.pending,
+              later: messages.screens.later,
+            }}
+            title={messages.screens.guestInformation}
             state={guestReady ? "complete" : "pending"}
             detail={
               reservation.guestEmail
-                ? "Name and contact are on file."
-                : "Name is on file. Email can be added later."
+                ? messages.screens.contactOnFile
+                : messages.screens.nameOnFile
             }
           />
           <JourneyStep
-            title="Onboarding"
+            labels={{
+              complete: messages.screens.complete,
+              pending: messages.screens.pending,
+              later: messages.screens.later,
+            }}
+            title={messages.screens.onboarding}
             state={reservation.onboardingCompletedAt ? "complete" : "pending"}
             detail={
               reservation.onboardingCompletedAt
-                ? "The guest has submitted arrival information."
-                : "Waiting for the guest to complete onboarding."
+                ? messages.screens.arrivalSubmitted
+                : messages.screens.waitingOnboarding
             }
           />
           <JourneyStep
-            title="House rules"
+            labels={{
+              complete: messages.screens.complete,
+              pending: messages.screens.pending,
+              later: messages.screens.later,
+            }}
+            title={messages.screens.houseRules}
             state={reservation.rulesAcceptedAt ? "complete" : "pending"}
             detail={
               reservation.rulesAcceptedAt
-                ? "The guest accepted the current house rules."
-                : "Rules have not been accepted yet."
+                ? messages.screens.rulesAccepted
+                : messages.screens.rulesPending
             }
           />
           <JourneyStep
-            title="Checkout"
+            labels={{
+              complete: messages.screens.complete,
+              pending: messages.screens.pending,
+              later: messages.screens.later,
+            }}
+            title={messages.screens.checkout}
             state={reservation.checkoutCompletedAt || arrivalReady ? (reservation.checkoutCompletedAt ? "complete" : "pending") : "later"}
             detail={
               reservation.checkoutCompletedAt
-                ? "The guest marked checkout complete."
-                : "Checkout is recorded from the guest portal."
+                ? messages.screens.checkoutDone
+                : messages.screens.checkoutPending
             }
           />
         </ul>
@@ -260,7 +293,7 @@ export default async function ClientReservationDetailPage({
       </ClientSectionCard>
 
       {reservation.issues.length > 0 ? (
-        <ClientSectionCard title="Issues" description="Items linked to this reservation.">
+        <ClientSectionCard title={messages.nav.issues} description={messages.screens.linkedIssues}>
           <ul className="divide-y">
             {reservation.issues.map((issue) => (
               <li key={issue.id} className="py-3">

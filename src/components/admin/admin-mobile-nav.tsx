@@ -6,10 +6,12 @@ import { Menu, X } from "lucide-react";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Button } from "@/components/ui/button";
 import { ADMIN_ROUTES } from "@/config/admin";
+import { useI18n } from "@/i18n/provider";
 import { signOutAction } from "@/lib/auth/actions";
 
 export function AdminMobileNav() {
   const [open, setOpen] = useState(false);
+  const { messages } = useI18n();
   const signOut = signOutAction.bind(null, ADMIN_ROUTES.login);
 
   return (
@@ -23,7 +25,9 @@ export function AdminMobileNav() {
         onClick={() => setOpen((value) => !value)}
       >
         {open ? <X className="size-4" /> : <Menu className="size-4" />}
-        <span className="sr-only">Toggle navigation</span>
+        <span className="sr-only">
+          {open ? messages.nav.closeNavigation : messages.nav.openNavigation}
+        </span>
       </Button>
       {open ? (
         <div
@@ -33,7 +37,7 @@ export function AdminMobileNav() {
           <AdminNav onNavigate={() => setOpen(false)} />
           <form action={signOut} className="mt-4 border-t pt-4">
             <Button type="submit" variant="ghost" className="w-full justify-start">
-              Sign out
+              {messages.auth.signOut}
             </Button>
           </form>
         </div>

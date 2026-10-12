@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 
+import { LocaleFrame } from "@/components/i18n/locale-frame";
 import { ClientShell } from "@/components/workspace/client-shell";
 import { ClientUnavailable } from "@/components/workspace/client-unavailable";
 import { ADMIN_ROUTES } from "@/config/admin";
@@ -10,6 +11,7 @@ import { resolveValidSupportWorkspace } from "@/lib/authorization/support-worksp
 import { AuthenticationError, AuthorizationError } from "@/lib/errors";
 import { loadWorkspaceBranding } from "@/lib/branding/load";
 import { readOnboardingGate } from "@/lib/onboarding/load";
+import { getRequestI18n } from "@/i18n/get-locale";
 import { requireCurrentOrganization } from "@/lib/tenancy/context";
 import type { WorkspaceView } from "@/types/auth";
 
@@ -40,22 +42,28 @@ export default async function ClientWorkspaceLayout({
       } else {
         const admin = await getPlatformAdminContext();
 
+        const { messages } = await getRequestI18n();
+
         if (admin) {
           return (
+            <LocaleFrame>
             <ClientUnavailable
-              title="This is a client workspace."
-              description="You're currently signed in as an Onwarda Internal Admin. Use Support Mode from the Internal Admin to access a client workspace for troubleshooting."
+              title={messages.shell.clientWorkspaceTitle}
+              description={messages.shell.clientWorkspaceAdmin}
               actionHref={ADMIN_ROUTES.clients}
-              actionLabel="Back to clients"
+              actionLabel={messages.shell.backToClients}
             />
+            </LocaleFrame>
           );
         }
 
         return (
+          <LocaleFrame>
           <ClientUnavailable
-            title="Workspace unavailable"
-            description={error.message}
+            title={messages.shell.workspaceUnavailable}
+            description={messages.shell.workspaceUnavailableBody}
           />
+          </LocaleFrame>
         );
       }
     } else {
